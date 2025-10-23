@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frecuencias Quini 6 y Brinco - Conectado a MySQL</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 2rem;
+            background: #f7f7f7;
+        }
+        section {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        h1, h2 {
+            margin-top: 0;
+        }
+        form label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        form input[type="text"],
+        form input[type="number"],
+        form input[type="date"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.5rem;
+            margin-top: 0.25rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        form button {
+            display: inline-block;
+            border: none;
+            background: #2563eb;
+            color: #fff;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+        }
+        form button:hover {
+            background: #1e4ec8;
+        }
+        form button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .mensaje {
+            margin-top: 0.75rem;
+            font-weight: 600;
+            color: #b91c1c;
+        }
+        .mensaje.exito {
+            color: #166534;
+        }
+        .nota-campos {
+            font-weight: 400;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        #frecuencias-quini,
+        #frecuencias-brinco {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+            color: #495057;
+            white-space: pre-wrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        .status-connected {
+            background-color: #10b981;
+        }
+        .status-disconnected {
+            background-color: #ef4444;
+        }
+        .status-loading {
+            background-color: #f59e0b;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .connection-status {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>
+        Modelado y Frecuencias de Quini 6 / Brinco
+        <div class="connection-status">
+            <span id="connection-indicator" class="status-indicator status-loading"></span>
+            <span id="connection-text">Conectando al servidor...</span>
+        </div>
+    </h1>
+
+    <section>
+        <h2>Carga de Sorteos - Quini 6</h2>
+        <form id="form-quini">
+            <label>
+                Concurso ID
+                <input type="number" name="concursoId" min="1" required>
+            </label>
+            <label>
+                Fecha del sorteo
+                <input type="date" name="fecha" required>
+            </label>
+            <label>
+                Primer Sorteo <span class="nota-campos">6 números entre 00 y 45</span>
+                <input type="text" name="primerSorteo" placeholder="e.g. 03,12,18,26,33,44" required>
+            </label>
+            <label>
+                Segunda del Quini <span class="nota-campos">6 números entre 00 y 45</span>
+                <input type="text" name="segundaDelQuini" placeholder="e.g. 05 11 19 24 37 43" required>
+            </label>
+            <label>
+                Revancha <span class="nota-campos">6 números entre 00 y 45</span>
+                <input type="text" name="revancha" placeholder="e.g. 02,05,08,16,21,27" required>
+            </label>
+            <label>
+                Siempre Sale <span class="nota-campos">6 números entre 00 y 45</span>
+                <input type="text" name="siempreSale" placeholder="e.g. 01 07 14 22 29 41" required>
+            </label>
+            <label>
+                Premio Extra <span class="nota-campos">Hasta 18 números únicos entre 00 y 45 (opcional)</span>
+                <input type="text" name="premioExtra" placeholder="e.g. 03,12,18,26,33,44,02,05,08,16,21,27">
+            </label>
+            <button type="submit">Agregar sorteo Quini 6</button>
+            <p id="mensaje-quini" class="mensaje" hidden></p>
+        </form>
+    </section>
+
+    <section>
+        <h2>Carga de Sorteos - Brinco</h2>
+        <form id="form-brinco">
+            <label>
+                Concurso ID (Brinco)
+                <input type="number" name="concursoIdBrinco" min="1" required>
+            </label>
+            <label>
+                Fecha del sorteo
+                <input type="date" name="fecha" required>
+            </label>
+            <label>
+                Brinco Tradicional <span class="nota-campos">6 números entre 00 y 39</span>
+                <input type="text" name="brincoTradicional" placeholder="e.g. 00,07,14,19,28,36" required>
+            </label>
+            <label>
+                Brinco Junior <span class="nota-campos">6 números entre 00 y 39</span>
+                <input type="text" name="brincoJunior" placeholder="e.g. 03 09 15 21 30 37" required>
+            </label>
+            <button type="submit">Agregar sorteo Brinco</button>
+            <p id="mensaje-brinco" class="mensaje" hidden></p>
+        </form>
+    </section>
+
+    <section>
+        <h2>Modelo de Datos - Quini 6</h2>
+        <pre id="modelo-quini">Cargando datos...</pre>
+    </section>
+
+    <section>
+        <h2>Modelo de Datos - Brinco</h2>
+        <pre id="modelo-brinco">Cargando datos...</pre>
+    </section>
+
+    <section>
+        <h2>Estadísticas de Números Sorteados</h2>
+        <p>Las estadísticas se actualizan automáticamente cada vez que agregas un nuevo sorteo. Los números están ordenados de mayor a menor frecuencia.</p>
+        
+        <h3>Quini 6 - Números más repetidos</h3>
+        <div id="frecuencias-quini">Cargando estadísticas...</div>
+        
+        <h3>Brinco - Números más repetidos</h3>
+        <div id="frecuencias-brinco">Cargando estadísticas...</div>
+    </section>
+
+    <section>
+        <h2>Acciones</h2>
+        <button id="refresh-data">🔄 Actualizar datos</button>
+        <button id="export-sql">📥 Exportar SQL</button>
+        <p><em>Los datos ahora se guardan en la base de datos MySQL y se sincronizan automáticamente.</em></p>
+    </section>
+    
+    <script src="js/app-api.js" defer></script>
+</body>
+</html>
