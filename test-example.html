@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba de Funcionalidad</title>
+    <script>
+        function testQuiniData() {
+            // Datos de ejemplo para probar
+            const testData = {
+                quini: [
+                    {
+                        concursoId: 1,
+                        fecha: '2024-01-15',
+                        primerSorteo: [3, 12, 18, 26, 33, 44],
+                        segundaDelQuini: [5, 11, 19, 24, 37, 43],
+                        revancha: [2, 5, 8, 16, 21, 27],
+                        siempreSale: [1, 7, 14, 22, 29, 41],
+                        premioExtra: [3, 12, 18, 26, 33, 44, 2, 5, 8, 16, 21, 27]
+                    },
+                    {
+                        concursoId: 2,
+                        fecha: '2024-01-22',
+                        primerSorteo: [5, 15, 20, 30, 35, 42],
+                        segundaDelQuini: [3, 8, 12, 25, 38, 45],
+                        revancha: [1, 6, 11, 17, 23, 28],
+                        siempreSale: [2, 9, 16, 24, 31, 40],
+                        premioExtra: [5, 15, 20, 30, 35, 42, 1, 6, 11, 17, 23, 28]
+                    }
+                ],
+                brinco: []
+            };
+
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('apostando_data_v1', JSON.stringify(testData));
+                console.log('Datos de prueba cargados');
+                
+                // Calculemos las frecuencias manualmente para verificar
+                const numCount = {};
+                testData.quini.forEach(sorteo => {
+                    ['primerSorteo', 'segundaDelQuini', 'revancha', 'siempreSale'].forEach(tipo => {
+                        sorteo[tipo].forEach(num => {
+                            numCount[num] = (numCount[num] || 0) + 1;
+                        });
+                    });
+                    if (sorteo.premioExtra) {
+                        sorteo.premioExtra.forEach(num => {
+                            numCount[num] = (numCount[num] || 0) + 1;
+                        });
+                    }
+                });
+                
+                console.log('Frecuencias esperadas:', numCount);
+                
+                // Ordenar por frecuencia
+                const sortedFreq = Object.entries(numCount)
+                    .map(([num, count]) => ({ numero: parseInt(num), cantidad: count }))
+                    .sort((a, b) => b.cantidad - a.cantidad || a.numero - b.numero);
+                
+                console.log('Frecuencias ordenadas:', sortedFreq);
+                
+                alert('Datos de prueba cargados. Revisa la consola para ver las frecuencias esperadas, luego recarga la página principal.');
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Prueba de Funcionalidad - Quini 6</h1>
+    <p>Esta página te permite cargar datos de prueba para verificar que las estadísticas funcionan correctamente.</p>
+    
+    <button onclick="testQuiniData()">Cargar datos de prueba</button>
+    
+    <h2>Datos que se cargarán:</h2>
+    <ul>
+        <li><strong>Sorteo 1 (2024-01-15):</strong>
+            <ul>
+                <li>Primer Sorteo: 03, 12, 18, 26, 33, 44</li>
+                <li>Segunda del Quini: 05, 11, 19, 24, 37, 43</li>
+                <li>Revancha: 02, 05, 08, 16, 21, 27</li>
+                <li>Siempre Sale: 01, 07, 14, 22, 29, 41</li>
+            </ul>
+        </li>
+        <li><strong>Sorteo 2 (2024-01-22):</strong>
+            <ul>
+                <li>Primer Sorteo: 05, 15, 20, 30, 35, 42</li>
+                <li>Segunda del Quini: 03, 08, 12, 25, 38, 45</li>
+                <li>Revancha: 01, 06, 11, 17, 23, 28</li>
+                <li>Siempre Sale: 02, 09, 16, 24, 31, 40</li>
+            </ul>
+        </li>
+    </ul>
+    
+    <p><strong>Números que deberían aparecer más veces:</strong></p>
+    <ul>
+        <li>Números que aparecen 3 veces: 05 (en segunda, revancha del sorteo 1, y primer sorteo del sorteo 2)</li>
+        <li>Números que aparecen 2 veces: 01, 02, 03, 08, 11, 12, 16, 24</li>
+        <li>Los demás aparecen 1 vez cada uno</li>
+    </ul>
+    
+    <p><em>Después de hacer clic en "Cargar datos de prueba", ve a la página principal (index.html) para ver las estadísticas.</em></p>
+</body>
+</html>

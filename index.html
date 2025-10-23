@@ -70,6 +70,16 @@
             font-size: 0.9rem;
             color: #555;
         }
+        #frecuencias-quini,
+        #frecuencias-brinco {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+            color: #495057;
+        }
     </style>
 </head>
 <body>
@@ -146,11 +156,14 @@
     </section>
 
     <section>
-        <h2>Frecuencias Calculadas</h2>
-        <h3>Quini 6</h3>
-        <pre id="frecuencias-quini"></pre>
-        <h3>Brinco</h3>
-        <pre id="frecuencias-brinco"></pre>
+        <h2>Estadísticas de Números Sorteados</h2>
+        <p>Las estadísticas se actualizan automáticamente cada vez que agregas un nuevo sorteo. Los números están ordenados de mayor a menor frecuencia.</p>
+        
+        <h3>Quini 6 - Números más repetidos</h3>
+        <div id="frecuencias-quini">(sin datos)</div>
+        
+        <h3>Brinco - Números más repetidos</h3>
+        <div id="frecuencias-brinco">(sin datos)</div>
     </section>
 
     <section>
