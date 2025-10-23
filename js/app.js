@@ -72,16 +72,27 @@
         (model.quini || []).forEach(s => {
             lines.push(`-- Quini ${s.concursoId} (${s.fecha})`);
             lines.push(`INSERT INTO quini_sorteos (id, fecha) VALUES (${s.concursoId}, '${s.fecha}');`);
-            [['primerSorteo','primer'],['segundaDelQuini','segunda'],['revancha','revancha'],['siempreSale','siempre']].forEach(([k,t])=> (s[k]||[]).forEach(n=> lines.push(`INSERT INTO quini_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, '${t}', ${n});`))));
-            (s.premioExtra||[]).forEach(n=> lines.push(`INSERT INTO quini_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'premio_extra', ${n});`));
+            const tipos = [['primerSorteo','primer'],['segundaDelQuini','segunda'],['revancha','revancha'],['siempreSale','siempre']];
+            tipos.forEach(([k,t]) => {
+                (s[k]||[]).forEach(n => {
+                    lines.push(`INSERT INTO quini_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, '${t}', ${n});`);
+                });
+            });
+            (s.premioExtra||[]).forEach(n => {
+                lines.push(`INSERT INTO quini_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'premio_extra', ${n});`);
+            });
             lines.push('');
         });
 
         (model.brinco || []).forEach(s => {
             lines.push(`-- Brinco ${s.concursoId} (${s.fecha})`);
             lines.push(`INSERT INTO brinco_sorteos (id, fecha) VALUES (${s.concursoId}, '${s.fecha}');`);
-            (s.brincoTradicional||[]).forEach(n=> lines.push(`INSERT INTO brinco_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'tradicional', ${n});`));
-            (s.brincoJunior||[]).forEach(n=> lines.push(`INSERT INTO brinco_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'junior', ${n});`));
+            (s.brincoTradicional||[]).forEach(n => {
+                lines.push(`INSERT INTO brinco_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'tradicional', ${n});`);
+            });
+            (s.brincoJunior||[]).forEach(n => {
+                lines.push(`INSERT INTO brinco_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'junior', ${n});`);
+            });
             lines.push('');
         });
 
@@ -124,14 +135,121 @@
         if (!document) return;
         qs('#modelo-quini').textContent = JSON.stringify(model.quini || [], null, 2);
         qs('#modelo-brinco').textContent = JSON.stringify(model.brinco || [], null, 2);
-        qs('#frecuencias-quini').textContent = computeFrequenciesQuini(model).filter(x=>x.cantidad>0).sort((a,b)=>b.cantidad-a.cantidad||a.numero-b.numero).map(x=>`${String(x.numero).padStart(2,'0')}: ${x.cantidad}`).join('\n') || '(sin datos)';
-        qs('#frecuencias-brinco').textContent = computeFrequenciesBrinco(model).filter(x=>x.cantidad>0).sort((a,b)=>b.cantidad-a.cantidad||a.numero-b.numero).map(x=>`${String(x.numero).padStart(2,'0')}: ${x.cantidad}`).join('\n') || '(sin datos)';
+        
+        // Frecuencias Quini 6 (ordenadas de mayor a menor)
+        const freqQuini = computeFrequenciesQuini(model)
+            .filter(x => x.cantidad > 0)
+            .sort((a, b) => b.cantidad - a.cantidad || a.numero - b.numero);
+        
+        if (freqQuini.length > 0) {
+            const totalSorteos = model.quini.length;
+            qs('#frecuencias-quini').textContent = 
+                `Números más sorteados (${totalSorteos} sorteo${totalSorteos !== 1 ? 's' : ''}):\n` +
+                freqQuini.map(x => `${String(x.numero).padStart(2,'0')}: ${x.cantidad} veces`).join('\n');
+        } else {
+            qs('#frecuencias-quini').textContent = '(sin datos)';
+        }
+        
+        // Frecuencias Brinco (ordenadas de mayor a menor)
+        const freqBrinco = computeFrequenciesBrinco(model)
+            .filter(x => x.cantidad > 0)
+            .sort((a, b) => b.cantidad - a.cantidad || a.numero - b.numero);
+        
+        if (freqBrinco.length > 0) {
+            const totalSorteosBrinco = model.brinco.length;
+            qs('#frecuencias-brinco').textContent = 
+                `Números más sorteados (${totalSorteosBrinco} sorteo${totalSorteosBrinco !== 1 ? 's' : ''}):\n` +
+                freqBrinco.map(x => `${String(x.numero).padStart(2,'0')}: ${x.cantidad} veces`).join('\n');
+        } else {
+            qs('#frecuencias-brinco').textContent = '(sin datos)';
+        }
+        
         qs('#sql-script').textContent = generateSQL(model);
     }
     function showMessage(selector, text, isError=true){
         const el = qs(selector); if(!el) return;
         el.textContent = text; el.classList.toggle('exito', !isError); el.hidden = false;
         if(!isError) setTimeout(()=>el.hidden=true, 4000);
+    }
+
+    function handleQuiniSubmit(event) {
+        event.preventDefault();
+        try {
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            const concursoId = parseInt(formData.get('concursoId'));
+            const fecha = formData.get('fecha');
+            const primerSorteo = parseNumbers(formData.get('primerSorteo'), { min: 0, max: 45, requiredCount: 6 });
+            const segundaDelQuini = parseNumbers(formData.get('segundaDelQuini'), { min: 0, max: 45, requiredCount: 6 });
+            const revancha = parseNumbers(formData.get('revancha'), { min: 0, max: 45, requiredCount: 6 });
+            const siempreSale = parseNumbers(formData.get('siempreSale'), { min: 0, max: 45, requiredCount: 6 });
+            const premioExtra = parseNumbers(formData.get('premioExtra') || '', { min: 0, max: 45, allowUpTo: 18 });
+
+            const model = loadModel();
+            
+            // Verificar si ya existe un sorteo con el mismo ID
+            const existingIndex = model.quini.findIndex(s => s.concursoId === concursoId);
+            if (existingIndex >= 0) {
+                throw new Error(`Ya existe un sorteo Quini 6 con ID ${concursoId}`);
+            }
+
+            const sorteo = {
+                concursoId,
+                fecha,
+                primerSorteo,
+                segundaDelQuini,
+                revancha,
+                siempreSale,
+                premioExtra
+            };
+
+            model.quini.push(sorteo);
+            saveModel(model);
+            renderModel(model);
+            
+            form.reset();
+            showMessage('#mensaje-quini', `Sorteo Quini 6 #${concursoId} agregado exitosamente.`, false);
+        } catch (error) {
+            showMessage('#mensaje-quini', `Error: ${error.message}`, true);
+        }
+    }
+
+    function handleBrincoSubmit(event) {
+        event.preventDefault();
+        try {
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            const concursoId = parseInt(formData.get('concursoIdBrinco'));
+            const fecha = formData.get('fecha');
+            const brincoTradicional = parseNumbers(formData.get('brincoTradicional'), { min: 0, max: 39, requiredCount: 6 });
+            const brincoJunior = parseNumbers(formData.get('brincoJunior'), { min: 0, max: 39, requiredCount: 6 });
+
+            const model = loadModel();
+            
+            // Verificar si ya existe un sorteo con el mismo ID
+            const existingIndex = model.brinco.findIndex(s => s.concursoId === concursoId);
+            if (existingIndex >= 0) {
+                throw new Error(`Ya existe un sorteo Brinco con ID ${concursoId}`);
+            }
+
+            const sorteo = {
+                concursoId,
+                fecha,
+                brincoTradicional,
+                brincoJunior
+            };
+
+            model.brinco.push(sorteo);
+            saveModel(model);
+            renderModel(model);
+            
+            form.reset();
+            showMessage('#mensaje-brinco', `Sorteo Brinco #${concursoId} agregado exitosamente.`, false);
+        } catch (error) {
+            showMessage('#mensaje-brinco', `Error: ${error.message}`, true);
+        }
     }
 
     function init() {
