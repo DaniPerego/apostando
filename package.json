@@ -1,12 +1,27 @@
 {
   "name": "apostando",
   "version": "0.1.0",
+  "description": "Sistema de seguimiento y estadísticas para sorteos de Quini 6 y Brinco",
+  "main": "server.js",
   "private": true,
-  "devDependencies": {
-    "jest": "^29.7.0"
-  },
   "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "init": "node init.js",
     "test": "jest --detectOpenHandles"
+  },
+  "keywords": ["quini6", "brinco", "sorteos", "estadisticas", "mysql"],
+  "author": "DaniPerego",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
   },
   "jest": {
     "testEnvironment": "jsdom"
