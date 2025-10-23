@@ -1,0 +1,14 @@
+{
+  "name": "apostando",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "scripts": {
+    "test": "jest --detectOpenHandles"
+  },
+  "jest": {
+    "testEnvironment": "jsdom"
+  }
+}
