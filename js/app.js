@@ -1,259 +1,164 @@
 'use strict';
 
-const quini6Resultados = [
-    {
-        concursoID: 3090,
-        fechaSorteo: '2025-10-12',
-        primerSorteo: [3, 12, 18, 26, 33, 44],
-        segundaDelQuini: [5, 11, 19, 24, 37, 43],
-        revancha: [2, 5, 8, 16, 21, 27],
-        siempreSale: [1, 7, 14, 22, 29, 41],
-        premioExtra: [3, 12, 18, 26, 33, 44, 2, 5, 8, 16, 21, 27]
-    },
-    {
-        concursoID: 3091,
-        fechaSorteo: '2025-10-19',
-        primerSorteo: [4, 9, 17, 28, 35, 42],
-        segundaDelQuini: [6, 13, 20, 25, 38, 45],
-        revancha: [0, 6, 14, 19, 25, 32],
-        siempreSale: [5, 10, 18, 24, 31, 39],
-        premioExtra: [4, 9, 17, 28, 35, 42, 0, 6, 14, 19, 25, 32]
+// Helpers y lógica (exportable para tests y usable en navegador)
+(function () {
+    const normalizeNumberToken = tok => {
+        if (!tok) return null;
+        const cleaned = String(tok).replace(/[^0-9]/g, '');
+        if (cleaned === '') return null;
+        return parseInt(cleaned, 10);
+    };
+
+    function parseNumbers(input, opts = {}) {
+        const { min = 0, max = 45, requiredCount = null, allowUpTo = null } = opts;
+        if (!input) return [];
+        const tokens = String(input).split(/[\s,;]+/).map(t => t.trim()).filter(Boolean);
+        const nums = tokens.map(t => {
+            const n = normalizeNumberToken(t);
+            if (n === null || Number.isNaN(n)) throw new Error(`Token inválido: "${t}"`);
+            if (n < min || n > max) throw new Error(`Número fuera de rango (${min}-${max}): ${t}`);
+            return n;
+        });
+        const unique = Array.from(new Set(nums));
+        if (unique.length !== nums.length) throw new Error('Números repetidos en la lista');
+        if (requiredCount !== null && unique.length !== requiredCount) throw new Error(`Se requieren exactamente ${requiredCount} números, se recibieron ${unique.length}`);
+        if (allowUpTo !== null && unique.length > allowUpTo) throw new Error(`Se permiten hasta ${allowUpTo} números, se recibieron ${unique.length}`);
+        return unique.sort((a, b) => a - b);
     }
-];
 
-const brincoResultados = [
-    {
-        concursoID_Brinco: 1,
-        fechaSorteo: '2025-10-05',
-        brincoTradicional: [0, 7, 14, 19, 28, 36],
-        brincoJunior: [3, 9, 15, 21, 30, 37]
-    },
-    {
-        concursoID_Brinco: 2,
-        fechaSorteo: '2025-10-12',
-        brincoTradicional: [2, 11, 18, 23, 29, 34],
-        brincoJunior: [4, 12, 20, 27, 32, 39]
+    // Almacenamiento en localStorage
+    const STORAGE_KEY = 'apostando_data_v1';
+    const defaultModel = { quini: [], brinco: [] };
+
+    function loadModel() {
+        try {
+            const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(STORAGE_KEY) : null;
+            return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(defaultModel));
+        } catch (e) {
+            return JSON.parse(JSON.stringify(defaultModel));
+        }
     }
-];
+    function saveModel(model) {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(model, null, 2));
+    }
 
-const MYSQL_SCRIPT_PATH = 'sql/schema.sql';
+    // Frecuencias
+    function computeFrequenciesQuini(model) {
+        const counts = Array(46).fill(0);
+        (model.quini || []).forEach(s => {
+            ['primerSorteo','segundaDelQuini','revancha','siempreSale'].forEach(k => (s[k]||[]).forEach(n => counts[n]++));
+            (s.premioExtra||[]).forEach(n => counts[n]++);
+        });
+        return counts.map((c, i) => ({ numero: i, cantidad: c }));
+    }
+    function computeFrequenciesBrinco(model) {
+        const counts = Array(40).fill(0);
+        (model.brinco || []).forEach(s => {
+            ['brincoTradicional','brincoJunior'].forEach(k => (s[k]||[]).forEach(n => counts[n]++));
+        });
+        return counts.map((c, i) => ({ numero: i, cantidad: c }));
+    }
 
-function calcularFrecuencias(sorteos, universoMaximo) {
-    const frecuencias = Array.from({ length: universoMaximo + 1 }, (_, numero) => ({
-        numero,
-        apariciones: 0,
-        frecuenciaRelativa: 0
-    }));
+    // Generador SQL simple
+    function generateSQL(model) {
+        const lines = [];
+        lines.push('-- Esquema sugerido para MySQL');
+        lines.push('CREATE TABLE IF NOT EXISTS quini_sorteos (id INT PRIMARY KEY, fecha DATE);');
+        lines.push('CREATE TABLE IF NOT EXISTS quini_numeros (sorteo_id INT, tipo ENUM(\'primer\',\'segunda\',\'revancha\',\'siempre\',\'premio_extra\'), numero TINYINT, PRIMARY KEY (sorteo_id, tipo, numero));');
+        lines.push('CREATE TABLE IF NOT EXISTS brinco_sorteos (id INT PRIMARY KEY, fecha DATE);');
+        lines.push('CREATE TABLE IF NOT EXISTS brinco_numeros (sorteo_id INT, tipo ENUM(\'tradicional\',\'junior\'), numero TINYINT, PRIMARY KEY (sorteo_id, tipo, numero));');
+        lines.push('');
 
-    let totalExtracciones = 0;
+        (model.quini || []).forEach(s => {
+            lines.push(`-- Quini ${s.concursoId} (${s.fecha})`);
+            lines.push(`INSERT INTO quini_sorteos (id, fecha) VALUES (${s.concursoId}, '${s.fecha}');`);
+            [['primerSorteo','primer'],['segundaDelQuini','segunda'],['revancha','revancha'],['siempreSale','siempre']].forEach(([k,t])=> (s[k]||[]).forEach(n=> lines.push(`INSERT INTO quini_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, '${t}', ${n});`))));
+            (s.premioExtra||[]).forEach(n=> lines.push(`INSERT INTO quini_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'premio_extra', ${n});`));
+            lines.push('');
+        });
 
-    sorteos.forEach(registro => {
-        Object.values(registro).forEach(valor => {
-            if (!Array.isArray(valor)) {
-                return;
-            }
+        (model.brinco || []).forEach(s => {
+            lines.push(`-- Brinco ${s.concursoId} (${s.fecha})`);
+            lines.push(`INSERT INTO brinco_sorteos (id, fecha) VALUES (${s.concursoId}, '${s.fecha}');`);
+            (s.brincoTradicional||[]).forEach(n=> lines.push(`INSERT INTO brinco_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'tradicional', ${n});`));
+            (s.brincoJunior||[]).forEach(n=> lines.push(`INSERT INTO brinco_numeros (sorteo_id, tipo, numero) VALUES (${s.concursoId}, 'junior', ${n});`));
+            lines.push('');
+        });
 
-            valor.forEach(numero => {
-                if (Number.isInteger(numero) && numero >= 0 && numero <= universoMaximo) {
-                    frecuencias[numero].apariciones += 1;
-                    totalExtracciones += 1;
+        return lines.join('\n');
+    }
+
+    // Export helper: descarga un archivo en el navegador
+    function downloadFile(filename, content, mime = 'text/sql;charset=utf-8') {
+        const blob = new Blob([content], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    // Export y attach a window
+    const api = {
+        parseNumbers,
+        computeFrequenciesQuini,
+        computeFrequenciesBrinco,
+        generateSQL,
+        loadModel,
+        saveModel
+    };
+
+    if (typeof window !== 'undefined') {
+        window._apostando = Object.assign(window._apostando || {}, api);
+    }
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = api;
+    }
+
+    // Inicialización DOM solo en navegador (no cuando se require en Node/jest)
+    function qs(sel){ return document.querySelector(sel); }
+    function renderModel(model) {
+        if (!document) return;
+        qs('#modelo-quini').textContent = JSON.stringify(model.quini || [], null, 2);
+        qs('#modelo-brinco').textContent = JSON.stringify(model.brinco || [], null, 2);
+        qs('#frecuencias-quini').textContent = computeFrequenciesQuini(model).filter(x=>x.cantidad>0).sort((a,b)=>b.cantidad-a.cantidad||a.numero-b.numero).map(x=>`${String(x.numero).padStart(2,'0')}: ${x.cantidad}`).join('\n') || '(sin datos)';
+        qs('#frecuencias-brinco').textContent = computeFrequenciesBrinco(model).filter(x=>x.cantidad>0).sort((a,b)=>b.cantidad-a.cantidad||a.numero-b.numero).map(x=>`${String(x.numero).padStart(2,'0')}: ${x.cantidad}`).join('\n') || '(sin datos)';
+        qs('#sql-script').textContent = generateSQL(model);
+    }
+    function showMessage(selector, text, isError=true){
+        const el = qs(selector); if(!el) return;
+        el.textContent = text; el.classList.toggle('exito', !isError); el.hidden = false;
+        if(!isError) setTimeout(()=>el.hidden=true, 4000);
+    }
+
+    function init() {
+        const model = loadModel();
+        renderModel(model);
+        const formQuini = qs('#form-quini');
+        const formBrinco = qs('#form-brinco');
+        if (formQuini) formQuini.addEventListener('submit', handleQuiniSubmit);
+        if (formBrinco) formBrinco.addEventListener('submit', handleBrincoSubmit);
+        const btnExport = qs('#export-sql');
+        if (btnExport) {
+            btnExport.addEventListener('click', () => {
+                try {
+                    const modelLocal = loadModel();
+                    const sql = generateSQL(modelLocal);
+                    downloadFile('apostando.sql', sql);
+                    showMessage('#sql-script', 'Archivo .sql descargado.', false);
+                } catch (err) {
+                    showMessage('#sql-script', 'Error al generar SQL: ' + (err.message || ''), true);
                 }
             });
-        });
-    });
-
-    if (totalExtracciones > 0) {
-        frecuencias.forEach(item => {
-            const porcentaje = (item.apariciones / totalExtracciones) * 100;
-            item.frecuenciaRelativa = Number(porcentaje.toFixed(2));
-        });
-    }
-
-    return frecuencias
-        .map(item => ({
-            numero: item.numero.toString().padStart(2, '0'),
-            apariciones: item.apariciones,
-            frecuenciaRelativa: item.frecuenciaRelativa
-        }))
-        .sort((a, b) => {
-            if (b.apariciones !== a.apariciones) {
-                return b.apariciones - a.apariciones;
-            }
-            return a.numero.localeCompare(b.numero);
-        });
-}
-
-function renderModelos() {
-    document.getElementById('modelo-quini').textContent = JSON.stringify(quini6Resultados, null, 2);
-    document.getElementById('modelo-brinco').textContent = JSON.stringify(brincoResultados, null, 2);
-}
-
-function renderFrecuencias() {
-    const frecuenciasQuini = calcularFrecuencias(quini6Resultados, 45);
-    const frecuenciasBrinco = calcularFrecuencias(brincoResultados, 39);
-
-    document.getElementById('frecuencias-quini').textContent = JSON.stringify(frecuenciasQuini, null, 2);
-    document.getElementById('frecuencias-brinco').textContent = JSON.stringify(frecuenciasBrinco, null, 2);
-}
-
-function mostrarMensaje(elemento, mensaje, esError = false) {
-    elemento.textContent = mensaje;
-    elemento.hidden = false;
-    if (esError) {
-        elemento.classList.remove('exito');
-    } else {
-        elemento.classList.add('exito');
-    }
-}
-
-function limpiarMensaje(elemento) {
-    elemento.hidden = true;
-    elemento.textContent = '';
-    elemento.classList.remove('exito');
-}
-
-function parsearNumeros(cadena, minimo, maximo, opciones = {}) {
-    const {
-        cantidadExacta,
-        cantidadMaxima,
-        permitirVacio = false,
-        etiqueta = 'los números',
-        exigirUnicidad = true
-    } = opciones;
-
-    if (!cadena) {
-        if (permitirVacio) {
-            return [];
-        }
-        throw new Error(`Debe ingresar valores para ${etiqueta}.`);
-    }
-
-    const partes = cadena.split(/[\s,;]+/).filter(Boolean);
-
-    if (cantidadExacta && partes.length !== cantidadExacta) {
-        throw new Error(`${etiqueta} debe incluir exactamente ${cantidadExacta} valores.`);
-    }
-
-    if (cantidadMaxima && partes.length > cantidadMaxima) {
-        throw new Error(`${etiqueta} admite como máximo ${cantidadMaxima} valores.`);
-    }
-
-    const numeros = partes.map(parte => {
-        if (!/^\d{1,2}$/.test(parte)) {
-            throw new Error(`El valor "${parte}" no es un número válido de dos dígitos.`);
-        }
-        const numero = parseInt(parte, 10);
-        if (Number.isNaN(numero) || numero < minimo || numero > maximo) {
-            throw new Error(`El número ${parte} está fuera del rango permitido (${minimo}-${maximo}).`);
-        }
-        return numero;
-    });
-
-    if (exigirUnicidad) {
-        const conjunto = new Set(numeros);
-        if (conjunto.size !== numeros.length) {
-            throw new Error(`${etiqueta} no debe contener números repetidos.`);
         }
     }
 
-    return numeros;
-}
-
-function inicializarFormularios() {
-    const formularioQuini = document.getElementById('form-quini');
-    const formularioBrinco = document.getElementById('form-brinco');
-
-    formularioQuini.addEventListener('submit', event => {
-        event.preventDefault();
-        const mensaje = document.getElementById('mensaje-quini');
-        limpiarMensaje(mensaje);
-
-        try {
-            const formData = new FormData(event.target);
-
-            const nuevoSorteo = {
-                concursoID: Number(formData.get('concursoId')),
-                fechaSorteo: formData.get('fecha'),
-                primerSorteo: parsearNumeros(formData.get('primerSorteo'), 0, 45, {
-                    cantidadExacta: 6,
-                    etiqueta: 'Primer Sorteo'
-                }),
-                segundaDelQuini: parsearNumeros(formData.get('segundaDelQuini'), 0, 45, {
-                    cantidadExacta: 6,
-                    etiqueta: 'Segunda del Quini'
-                }),
-                revancha: parsearNumeros(formData.get('revancha'), 0, 45, {
-                    cantidadExacta: 6,
-                    etiqueta: 'Revancha'
-                }),
-                siempreSale: parsearNumeros(formData.get('siempreSale'), 0, 45, {
-                    cantidadExacta: 6,
-                    etiqueta: 'Siempre Sale'
-                }),
-                premioExtra: parsearNumeros(formData.get('premioExtra'), 0, 45, {
-                    cantidadMaxima: 18,
-                    permitirVacio: true,
-                    etiqueta: 'Premio Extra'
-                })
-            };
-
-            quini6Resultados.push(nuevoSorteo);
-            renderModelos();
-            renderFrecuencias();
-            event.target.reset();
-            mostrarMensaje(mensaje, 'Sorteo Quini 6 agregado correctamente.');
-        } catch (error) {
-            mostrarMensaje(mensaje, error.message, true);
-        }
-    });
-
-    formularioBrinco.addEventListener('submit', event => {
-        event.preventDefault();
-        const mensaje = document.getElementById('mensaje-brinco');
-        limpiarMensaje(mensaje);
-
-        try {
-            const formData = new FormData(event.target);
-
-            const nuevoSorteo = {
-                concursoID_Brinco: Number(formData.get('concursoIdBrinco')),
-                fechaSorteo: formData.get('fecha'),
-                brincoTradicional: parsearNumeros(formData.get('brincoTradicional'), 0, 39, {
-                    cantidadExacta: 6,
-                    etiqueta: 'Brinco Tradicional'
-                }),
-                brincoJunior: parsearNumeros(formData.get('brincoJunior'), 0, 39, {
-                    cantidadExacta: 6,
-                    etiqueta: 'Brinco Junior'
-                })
-            };
-
-            brincoResultados.push(nuevoSorteo);
-            renderModelos();
-            renderFrecuencias();
-            event.target.reset();
-            mostrarMensaje(mensaje, 'Sorteo Brinco agregado correctamente.');
-        } catch (error) {
-            mostrarMensaje(mensaje, error.message, true);
-        }
-    });
-}
-
-async function cargarScriptSql() {
-    const salidaSql = document.getElementById('sql-script');
-    try {
-        const respuesta = await fetch(MYSQL_SCRIPT_PATH);
-        if (!respuesta.ok) {
-            throw new Error(`HTTP ${respuesta.status}`);
-        }
-        const texto = await respuesta.text();
-        salidaSql.textContent = texto;
-    } catch (error) {
-        salidaSql.textContent = `No se pudo cargar el script SQL (${error.message}).`;
+    const isNode = (typeof module !== 'undefined' && module.exports);
+    if (!isNode && typeof document !== 'undefined') {
+        document.addEventListener('DOMContentLoaded', init);
     }
-}
 
-renderModelos();
-renderFrecuencias();
-inicializarFormularios();
-cargarScriptSql();
+})();
