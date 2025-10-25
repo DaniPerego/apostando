@@ -184,6 +184,34 @@
     </section>
 
     <section>
+        <h2>Carga de Sorteos - Loto Plus</h2>
+        <form id="form-loto-plus">
+            <label>
+                Concurso ID (Loto Plus)
+                <input type="number" name="concursoIdLotoPlus" min="1" required>
+            </label>
+            <label>
+                Fecha del sorteo
+                <input type="date" name="fecha" required>
+            </label>
+            <label>
+                Sorteo Principal <span class="nota-campos">6 números entre 00 y 35 (ejemplo)</span>
+                <input type="text" name="sorteoPrincipal" placeholder="e.g. 03,07,11,18,24,29" required>
+            </label>
+            <label>
+                Sorteo Jackpot <span class="nota-campos">2 números entre 00 y 9 (ejemplo)</span>
+                <input type="text" name="sorteoJackpot" placeholder="e.g. 01,05" required>
+            </label>
+            <label>
+                Loto 5 Plus <span class="nota-campos">5 números entre 00 y 35 (ejemplo)</span>
+                <input type="text" name="loto5Plus" placeholder="e.g. 03,11,25,30,35" required>
+            </label>
+            <button type="submit">Agregar sorteo Loto Plus</button>
+            <p id="mensaje-loto-plus" class="mensaje" hidden></p>
+        </form>
+    </section>
+
+    <section>
         <h2>Modelo de Datos - Quini 6</h2>
         <pre id="modelo-quini">Cargando datos...</pre>
     </section>
@@ -191,6 +219,11 @@
     <section>
         <h2>Modelo de Datos - Brinco</h2>
         <pre id="modelo-brinco">Cargando datos...</pre>
+    </section>
+
+    <section>
+        <h2>Modelo de Datos - Loto Plus</h2>
+        <pre id="modelo-loto-plus">Cargando datos...</pre>
     </section>
 
     <section>
@@ -202,6 +235,12 @@
         
         <h3>Brinco - Números más repetidos</h3>
         <div id="frecuencias-brinco">Cargando estadísticas...</div>
+        
+        <h3>Loto Plus - Números más repetidos (Principal)</h3>
+        <div id="frecuencias-loto-plus-principal">Cargando estadísticas...</div>
+        
+        <h3>Loto Plus - Números más repetidos (Jackpot)</h3>
+        <div id="frecuencias-loto-plus-jackpot">Cargando estadísticas...</div>
     </section>
 
     <section>
