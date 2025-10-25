@@ -135,14 +135,14 @@ async function loadQuiniFrequencies() {
         const filtered = frequencies.filter(f => f.cantidad > 0);
         
         if (filtered.length > 0) {
-            const totalSorteos = await apiRequest('/quini');
-            const freqText = `Números más sorteados (${totalSorteos.length} sorteo${totalSorteos.length !== 1 ? 's' : ''}):\n` +
+            const freqText = `Números más sorteados:\n` +
                 filtered.map(f => `${String(f.numero).padStart(2,'0')}: ${f.cantidad} veces`).join('\n');
             qs('#frecuencias-quini').textContent = freqText;
         } else {
             qs('#frecuencias-quini').textContent = '(sin datos)';
         }
     } catch (error) {
+        console.error('Error cargando frecuencias Quini:', error);
         qs('#frecuencias-quini').textContent = `Error: ${error.message}`;
     }
 }
@@ -153,14 +153,14 @@ async function loadBrincoFrequencies() {
         const filtered = frequencies.filter(f => f.cantidad > 0);
         
         if (filtered.length > 0) {
-            const totalSorteos = await apiRequest('/brinco');
-            const freqText = `Números más sorteados (${totalSorteos.length} sorteo${totalSorteos.length !== 1 ? 's' : ''}):\n` +
+            const freqText = `Números más sorteados:\n` +
                 filtered.map(f => `${String(f.numero).padStart(2,'0')}: ${f.cantidad} veces`).join('\n');
             qs('#frecuencias-brinco').textContent = freqText;
         } else {
             qs('#frecuencias-brinco').textContent = '(sin datos)';
         }
     } catch (error) {
+        console.error('Error cargando frecuencias Brinco:', error);
         qs('#frecuencias-brinco').textContent = `Error: ${error.message}`;
     }
 }
@@ -204,11 +204,11 @@ async function handleQuiniSubmit(event) {
         
         const concursoId = parseInt(formData.get('concursoId'));
         const fecha = formData.get('fecha');
-        const primerSorteo = parseNumbers(formData.get('primerSorteo'), { min: 0, max: 45, requiredCount: 6 });
-        const segundaDelQuini = parseNumbers(formData.get('segundaDelQuini'), { min: 0, max: 45, requiredCount: 6 });
-        const revancha = parseNumbers(formData.get('revancha'), { min: 0, max: 45, requiredCount: 6 });
-        const siempreSale = parseNumbers(formData.get('siempreSale'), { min: 0, max: 45, requiredCount: 6 });
-        const premioExtra = parseNumbers(formData.get('premioExtra') || '', { min: 0, max: 45, allowUpTo: 18 });
+        const primerSorteo = parseNumbers(formData.get('primerSorteo'), { min: 1, max: 45, requiredCount: 6 });
+        const segundaDelQuini = parseNumbers(formData.get('segundaDelQuini'), { min: 1, max: 45, requiredCount: 6 });
+        const revancha = parseNumbers(formData.get('revancha'), { min: 1, max: 45, requiredCount: 6 });
+        const siempreSale = parseNumbers(formData.get('siempreSale'), { min: 1, max: 45, requiredCount: 6 });
+        const premioExtra = parseNumbers(formData.get('premioExtra') || '', { min: 1, max: 45, allowUpTo: 18 });
 
         const sorteoData = {
             concursoId,
@@ -253,8 +253,8 @@ async function handleBrincoSubmit(event) {
         
         const concursoId = parseInt(formData.get('concursoIdBrinco'));
         const fecha = formData.get('fecha');
-        const brincoTradicional = parseNumbers(formData.get('brincoTradicional'), { min: 0, max: 39, requiredCount: 6 });
-        const brincoJunior = parseNumbers(formData.get('brincoJunior'), { min: 0, max: 39, requiredCount: 6 });
+        const brincoTradicional = parseNumbers(formData.get('brincoTradicional'), { min: 1, max: 45, requiredCount: 4 });
+        const brincoJunior = parseNumbers(formData.get('brincoJunior'), { min: 1, max: 45, requiredCount: 4 });
 
         const sorteoData = {
             concursoId,
@@ -358,6 +358,12 @@ function init() {
     
     // Cargar datos iniciales
     loadAllData();
+    
+    // Cargar estadísticas adicional después de un pequeño retraso
+    setTimeout(() => {
+        loadQuiniFrequencies();
+        loadBrincoFrequencies();
+    }, 2000);
 }
 
 // Inicializar cuando el DOM esté listo
