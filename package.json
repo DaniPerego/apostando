@@ -10,14 +10,21 @@
     "init": "node init.js",
     "test": "jest --detectOpenHandles"
   },
-  "keywords": ["quini6", "brinco", "sorteos", "estadisticas", "mysql"],
+  "keywords": [
+    "quini6",
+    "brinco",
+    "sorteos",
+    "estadisticas",
+    "mysql"
+  ],
   "author": "DaniPerego",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "mysql2": "^3.6.5",
+    "axios": "^1.12.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.5"
   },
   "devDependencies": {
     "jest": "^29.7.0",
