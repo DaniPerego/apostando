@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Icono</title>
+    <style>
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        body { font-family: Arial, sans-serif; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Generador de Icono para Apostando</h1>
+    <canvas id="iconCanvas" width="256" height="256"></canvas>
+    <br>
+    <button onclick="downloadIcon()">Descargar PNG</button>
+    
+    <script>
+        const canvas = document.getElementById('iconCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Fondo circular verde
+        ctx.fillStyle = '#2E7D32';
+        ctx.beginPath();
+        ctx.arc(128, 128, 120, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Borde del círculo
+        ctx.strokeStyle = '#1B5E20';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        
+        // Función para dibujar bola de lotería
+        function drawBall(x, y, number, color = '#FFF') {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 18, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(number, x, y);
+        }
+        
+        // Dibujar bolas de números
+        drawBall(80, 80, '6');
+        drawBall(176, 80, '15');
+        drawBall(80, 176, '23');
+        drawBall(176, 176, '31');
+        drawBall(128, 128, 'A', '#FFD700'); // Bola dorada central
+        
+        // Texto principal
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('APOSTANDO', 128, 210);
+        
+        ctx.font = '14px Arial';
+        ctx.fillText('Análisis de Sorteos', 128, 230);
+        
+        function downloadIcon() {
+            const link = document.createElement('a');
+            link.download = 'apostando-icon.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>

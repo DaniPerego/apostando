@@ -50,7 +50,14 @@ async function startServer() {
         if (!connectionOk) {
             console.error('\n❌ Error: No se pudo conectar a MySQL');
             console.log('💡 Ejecuta: node init.js para configurar la base de datos');
-            process.exit(1);
+            
+            // Si se ejecuta desde Electron, lanzar error en lugar de salir
+            const isElectron = process.env.ELECTRON || process.versions.electron;
+            if (isElectron) {
+                throw new Error('No se pudo conectar a MySQL');
+            } else {
+                process.exit(1);
+            }
         }
         
         console.log('🔄 Inicializando tablas...');
@@ -67,16 +74,32 @@ async function startServer() {
                 console.log('📝 Modo desarrollo activado');
             }
             
-            console.log('\n✨ ¡Listo para usar! Abre tu navegador y comienza a cargar sorteos.\n');
+            // Detectar si está corriendo en Electron
+            const isElectron = process.env.ELECTRON || process.versions.electron;
+            if (isElectron) {
+                console.log('\n🖥️ ¡Aplicación de escritorio iniciada correctamente!\n');
+            } else {
+                console.log('\n✨ ¡Listo para usar! Abre tu navegador y comienza a cargar sorteos.\n');
+            }
         });
         
     } catch (error) {
         console.error('❌ Error iniciando el servidor:', error.message);
-        process.exit(1);
+        
+        // Si se ejecuta desde Electron, relanzar error
+        const isElectron = process.env.ELECTRON || process.versions.electron;
+        if (isElectron) {
+            throw error;
+        } else {
+            process.exit(1);
+        }
     }
 }
 
-// Iniciar servidor
-startServer();
+// Solo iniciar servidor si no se está ejecutando desde Electron (importado desde main.js)
+const isElectron = process.env.ELECTRON || process.versions.electron;
+if (!isElectron || require.main === module) {
+    startServer();
+}
 
-module.exports = app;
+module.exports = { app, startServer };
