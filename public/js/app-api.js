@@ -283,6 +283,115 @@ async function handleBrincoSubmit(event) {
     }
 }
 
+// === FUNCIONES LOTO PLUS ===
+
+// Variable global para almacenar sorteos de Loto Plus
+let lotoPlusSorteos = [];
+
+// Cargar estadísticas de Loto Plus
+function loadLotoPlusFrequencies() {
+    try {
+        if (lotoPlusSorteos.length === 0) {
+            qs('#frecuencias-loto-plus-principal').textContent = '(sin datos)';
+            qs('#frecuencias-loto-plus-jackpot').textContent = '(sin datos)';
+            return;
+        }
+
+        // Usar los datos cargados y la función del archivo loto-plus.js
+        const universoMaximoPrincipal = 35; // Ajustar según programación real
+        const universoMaximoJackpot = 9;    // Ajustar según programación real
+        
+        const resultado = calcularFrecuenciasLotoPlus(lotoPlusSorteos, universoMaximoPrincipal, universoMaximoJackpot);
+        
+        // Mostrar estadísticas Principal
+        const filteredPrincipal = resultado.principal.filter(f => f.apariciones > 0);
+        if (filteredPrincipal.length > 0) {
+            const freqTextPrincipal = 'Números más sorteados:\n' +
+                filteredPrincipal.map(f => `${String(f.numero).padStart(2,'0')}: ${f.apariciones} veces (${f.frecuenciaRelativa.toFixed(1)}%)`).join('\n');
+            qs('#frecuencias-loto-plus-principal').textContent = freqTextPrincipal;
+        } else {
+            qs('#frecuencias-loto-plus-principal').textContent = '(sin datos)';
+        }
+        
+        // Mostrar estadísticas Jackpot
+        const filteredJackpot = resultado.jackpot.filter(f => f.apariciones > 0);
+        if (filteredJackpot.length > 0) {
+            const freqTextJackpot = 'Números más sorteados:\n' +
+                filteredJackpot.map(f => `${String(f.numero).padStart(2,'0')}: ${f.apariciones} veces (${f.frecuenciaRelativa.toFixed(1)}%)`).join('\n');
+            qs('#frecuencias-loto-plus-jackpot').textContent = freqTextJackpot;
+        } else {
+            qs('#frecuencias-loto-plus-jackpot').textContent = '(sin datos)';
+        }
+        
+    } catch (error) {
+        console.error('Error cargando frecuencias Loto Plus:', error);
+        qs('#frecuencias-loto-plus-principal').textContent = `Error: ${error.message}`;
+        qs('#frecuencias-loto-plus-jackpot').textContent = `Error: ${error.message}`;
+    }
+}
+
+// Mostrar datos de Loto Plus
+function displayLotoPlusData() {
+    try {
+        const displayData = lotoPlusSorteos.map(sorteo => ({
+            concursoID_LotoPlus: sorteo.concursoID_LotoPlus,
+            fechaSorteo: sorteo.fechaSorteo,
+            sorteoPrincipal: sorteo.sorteoPrincipal,
+            sorteoJackpot: sorteo.sorteoJackpot,
+            loto5Plus: sorteo.loto5Plus
+        }));
+        
+        qs('#modelo-loto-plus').textContent = JSON.stringify(displayData, null, 2);
+    } catch (error) {
+        qs('#modelo-loto-plus').textContent = `Error: ${error.message}`;
+    }
+}
+
+// Manejar envío del formulario Loto Plus
+async function handleLotoPlusSubmit(event) {
+    event.preventDefault();
+    
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Guardando...';
+    
+    try {
+        const formData = new FormData(event.target);
+        
+        const concursoID_LotoPlus = parseInt(formData.get('concursoIdLotoPlus'));
+        const fechaSorteo = formData.get('fecha');
+        const sorteoPrincipal = parseNumbers(formData.get('sorteoPrincipal'), { min: 0, max: 35, requiredCount: 6 });
+        const sorteoJackpot = parseNumbers(formData.get('sorteoJackpot'), { min: 0, max: 9, requiredCount: 2 });
+        const loto5Plus = parseNumbers(formData.get('loto5Plus'), { min: 0, max: 35, requiredCount: 5 });
+
+        const sorteoData = {
+            concursoID_LotoPlus,
+            fechaSorteo,
+            sorteoPrincipal: sorteoPrincipal.map(n => String(n).padStart(2, '0')),
+            sorteoJackpot: sorteoJackpot.map(n => String(n).padStart(2, '0')),
+            loto5Plus: loto5Plus.map(n => String(n).padStart(2, '0'))
+        };
+
+        // Agregar al array local (simulando persistencia)
+        lotoPlusSorteos.push(sorteoData);
+
+        event.target.reset();
+        showMessage('#mensaje-loto-plus', `Sorteo Loto Plus #${concursoID_LotoPlus} guardado exitosamente.`, false);
+        
+        // Actualizar visualizaciones
+        displayLotoPlusData();
+        loadLotoPlusFrequencies();
+        
+    } catch (error) {
+        console.error('Error submitting Loto Plus:', error);
+        showMessage('#mensaje-loto-plus', `Error: ${error.message}`, true);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+}
+
 // Función para exportar SQL (mantenida por compatibilidad)
 function generateAndDownloadSQL() {
     try {
@@ -346,6 +455,11 @@ function init() {
         formBrinco.addEventListener('submit', handleBrincoSubmit);
     }
     
+    const formLotoPlus = qs('#form-loto-plus');
+    if (formLotoPlus) {
+        formLotoPlus.addEventListener('submit', handleLotoPlusSubmit);
+    }
+    
     const refreshBtn = qs('#refresh-data');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', loadAllData);
@@ -359,10 +473,17 @@ function init() {
     // Cargar datos iniciales
     loadAllData();
     
+    // Cargar datos de ejemplo de Loto Plus si están disponibles
+    if (typeof sorteosLotoPlusEjemplo !== 'undefined') {
+        lotoPlusSorteos = [...sorteosLotoPlusEjemplo];
+        displayLotoPlusData();
+    }
+    
     // Cargar estadísticas adicional después de un pequeño retraso
     setTimeout(() => {
         loadQuiniFrequencies();
         loadBrincoFrequencies();
+        loadLotoPlusFrequencies();
     }, 2000);
 }
 
