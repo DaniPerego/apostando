@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apostando - Simple</title>
+    <style>
+        * { box-sizing: border-box; }
+        
+        /* VARIABLES CSS PARA TEMAS */
+        :root {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: white;
+            --bg-tertiary: #f8f9fa;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --accent-color: #007bff;
+            --accent-hover: #0056b3;
+            --success-bg: #d4edda;
+            --success-text: #155724;
+            --error-bg: #f8d7da;
+            --error-text: #721c24;
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #333;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #555;
+            --accent-color: #4dabf7;
+            --accent-hover: #339af0;
+            --success-bg: #2b8a3e;
+            --success-text: #d3f9d8;
+            --error-bg: #c92a2a;
+            --error-text: #ffc9c9;
+        }
+        
+        body { 
+            font-family: system-ui, sans-serif; 
+            max-width: 900px; 
+            margin: 1rem auto; 
+            padding: 1rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+        
+        /* TABS */
+        .tabs { 
+            display: flex; 
+            margin-bottom: 1rem; 
+            background: var(--bg-secondary);
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .tab { 
+            flex: 1;
+            padding: 1rem; 
+            text-align: center;
+            cursor: pointer; 
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border-color);
+            font-weight: bold;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        .tab:last-child { border-right: none; }
+        .tab.active { background: var(--accent-color); color: white; }
+        
+        /* CARDS */
+        .card { 
+            background: var(--bg-secondary); 
+            border-radius: 0 0 8px 8px; 
+            padding: 1.5rem; 
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            border-top: none;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* INPUTS */
+        input, button { 
+            padding: 0.5rem; 
+            margin: 0.25rem; 
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+        }
+        
+        button { 
+            background: var(--accent-color); 
+            color: white; 
+            border: none; 
+            cursor: pointer;
+            min-width: 120px;
+        }
+        button:hover { background: var(--accent-hover); }
+        button:disabled { background: #666; cursor: not-allowed; }
+        
+        /* LAYOUT */
+        .row { display: flex; gap: 0.5rem; align-items: center; margin: 0.5rem 0; }
+        .label { min-width: 140px; font-weight: bold; }
+        .jack-input { width: 60px; }
+        .numeros-grid { 
+            display: flex; 
+            gap: 0.3rem; 
+            flex-wrap: wrap;
+            position: relative;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .numeros-grid:hover {
+            background: var(--bg-tertiary);
+        }
+        
+        .numeros-grid.paste-ready {
+            background: var(--accent-color);
+            opacity: 0.8;
+        }
+        
+        .numeros-grid.paste-ready::after {
+            content: "Pegá números aquí";
+            position: absolute;
+            top: -20px;
+            left: 0;
+            font-size: 12px;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .numero-input { 
+            width: 50px; 
+            text-align: center; 
+            font-weight: bold;
+        }
+        
+        /* STATS */
+        .frecuencias { 
+            background: var(--bg-tertiary); 
+            padding: 1rem; 
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-line;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .card-frecuencias {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .card-frecuencias h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .frecuencias-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .numero-freq {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .numero-freq:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .numero-freq .numero {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+        }
+        
+        .numero-freq:hover .numero {
+            color: white;
+        }
+        
+        .numero-freq .freq {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .numero-freq:hover .freq {
+            color: white;
+        }
+        
+        .numero-freq.top-10 {
+            border-color: var(--accent-color);
+            background: linear-gradient(45deg, var(--bg-tertiary), var(--bg-secondary));
+        }
+        
+        .loto-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .loto-section h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+            font-size: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.25rem;
+        }
+        
+        .status { 
+            padding: 0.5rem; 
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }
+        .success { background: var(--success-bg); color: var(--success-text); }
+        .error { background: var(--error-bg); color: var(--error-text); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎲 Apostando - Simple</h1>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+            <span id="theme-icon">🌙</span>
+        </button>
+    </div>
+    
+    <!-- TABS -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('quini')">Quini 6</div>
+        <div class="tab" onclick="switchTab('loto')">Loto Plus</div>
+    </div>
+    
+    <!-- QUINI 6 TAB -->
+    <div id="quini-tab" class="tab-content active">
+        <div class="card">
+            <h2>🎯 Quini 6</h2>
+            <div class="row">
+                <label class="label">Concurso:</label>
+                <input type="number" id="quini-concurso" placeholder="Ej: 2890">
+            </div>
+            <div class="row">
+                <label class="label">Fecha:</label>
+                <input type="date" id="quini-fecha">
+            </div>
+            <div class="row">
+                <label class="label">Primera (6):</label>
+                <div class="numeros-grid" data-grupo="quini-primera">
+                    <input type="number" class="numero-input" id="quini-primera-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Segunda (6):</label>
+                <div class="numeros-grid" data-grupo="quini-segunda">
+                    <input type="number" class="numero-input" id="quini-segunda-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Revancha (6):</label>
+                <div class="numeros-grid" data-grupo="quini-revancha">
+                    <input type="number" class="numero-input" id="quini-revancha-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Siempre Sale (6):</label>
+                <div class="numeros-grid" data-grupo="quini-siempre">
+                    <input type="number" class="numero-input" id="quini-siempre-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-6" min="0" max="45">
+                </div>
+            </div>
+            
+            <button onclick="guardarQuini()">💾 Guardar Sorteo</button>
+            <button onclick="cargarFrecuenciasQuini()">� Actualizar Frecuencias</button>
+            
+            <div id="quini-status"></div>
+            
+            <!-- FRECUENCIAS PERMANENTES -->
+            <div class="card-frecuencias">
+                <h3>📊 Números más frecuentes (Quini 6)</h3>
+                <div id="quini-frecuencias-permanentes" class="frecuencias-grid">
+                    Cargando frecuencias...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- LOTO PLUS TAB -->
+    <div id="loto-tab" class="tab-content">
+        <div class="card">
+            <h2>🍀 Loto Plus</h2>
+            <div class="row">
+                <label class="label">Concurso:</label>
+                <input type="number" id="loto-concurso" placeholder="Ej: 1234">
+            </div>
+            <div class="row">
+                <label class="label">Fecha:</label>
+                <input type="date" id="loto-fecha">
+            </div>
+            <div class="row">
+                <label class="label">Tradicional (6):</label>
+                <div class="numeros-grid" data-grupo="loto-tradicional">
+                    <input type="number" class="numero-input" id="loto-tradicional-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Match (6):</label>
+                <div class="numeros-grid" data-grupo="loto-match">
+                    <input type="number" class="numero-input" id="loto-match-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Desquite (6):</label>
+                <div class="numeros-grid" data-grupo="loto-desquite">
+                    <input type="number" class="numero-input" id="loto-desquite-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Sale o Sale (6):</label>
+                <div class="numeros-grid" data-grupo="loto-sale">
+                    <input type="number" class="numero-input" id="loto-sale-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Jack (0-9):</label>
+                <input type="number" id="loto-jack" class="jack-input" placeholder="7" min="0" max="9">
+            </div>
+            
+            <button onclick="guardarLoto()">💾 Guardar Sorteo</button>
+            <button onclick="cargarFrecuenciasLoto()">� Actualizar Frecuencias</button>
+            
+            <div id="loto-status"></div>
+            
+            <!-- FRECUENCIAS PERMANENTES LOTO PLUS -->
+            <div class="card-frecuencias">
+                <h3>📊 Números más frecuentes (Loto Plus)</h3>
+                <div id="loto-frecuencias-permanentes" class="frecuencias-grid">
+                    Cargando frecuencias...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============= TEMA CLARO/OSCURO =============
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            document.getElementById('theme-icon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            
+            // Guardar preferencia
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        // Cargar tema guardado al iniciar
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('theme-icon').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        }
+        
+        // ============= TAB SWITCHING =============
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // ============= QUINI 6 FUNCTIONS =============
+        async function guardarQuini() {
+            const concurso = document.getElementById('quini-concurso').value;
+            const fecha = document.getElementById('quini-fecha').value;
+            const primera = obtenerNumerosQuini('primera');
+            const segunda = obtenerNumerosQuini('segunda');
+            const revancha = obtenerNumerosQuini('revancha');
+            const siempre = obtenerNumerosQuini('siempre');
+            
+            // Log para debug
+            console.log('Datos a enviar:', {
+                concurso,
+                fecha,
+                primera,
+                segunda,
+                revancha,
+                siempre
+            });
+            
+            if (!concurso || !fecha || primera.length !== 6 || segunda.length !== 6 || revancha.length !== 6 || siempre.length !== 6) {
+                mostrarStatus('quini', 'Completa todos los campos con 6 números cada uno', 'error');
+                return;
+            }
+            
+            try {
+                const datos = {
+                    concurso: parseInt(concurso),
+                    fecha,
+                    primer: primera,
+                    segunda: segunda,
+                    revancha: revancha,
+                    siempre: siempre
+                };
+                
+                console.log('📤 Enviando datos:', datos);
+                
+                const response = await fetch('/sorteo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+                
+                const result = await response.json();
+                console.log('📥 Respuesta:', result);
+                
+                if (result.success) {
+                    mostrarStatus('quini', `✅ Sorteo ${concurso} guardado correctamente`, 'success');
+                    limpiarFormulario('quini');
+                    // Actualizar frecuencias automáticamente
+                    setTimeout(() => cargarFrecuenciasQuini(), 500);
+                } else {
+                    const mensaje = result.details ? `${result.error}: ${result.details}` : result.error;
+                    mostrarStatus('quini', `❌ Error: ${mensaje}`, 'error');
+                }
+            } catch (error) {
+                mostrarStatus('quini', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function cargarFrecuenciasQuini() {
+            try {
+                const response = await fetch('/frecuencias');
+                const frecuencias = await response.json();
+                
+                // Actualizar la visualización permanente
+                actualizarFrecuenciasPermanentesQuini(frecuencias);
+                
+                mostrarStatus('quini', '📊 Frecuencias actualizadas', 'success');
+            } catch (error) {
+                mostrarStatus('quini', `❌ Error cargando frecuencias: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarFrecuenciasPermanentesQuini(frecuencias) {
+            const container = document.getElementById('quini-frecuencias-permanentes');
+            
+            if (frecuencias.length === 0) {
+                container.innerHTML = '<p>No hay datos de sorteos aún</p>';
+                return;
+            }
+            
+            // Crear grid de números con frecuencias
+            let html = '';
+            frecuencias.forEach((item, index) => {
+                const esTop10 = index < 10;
+                const clase = esTop10 ? 'numero-freq top-10' : 'numero-freq';
+                html += `
+                    <div class="${clase}" title="Número ${item.numero}: ${item.frecuencia} apariciones">
+                        <span class="numero">${item.numero.toString().padStart(2, '0')}</span>
+                        <span class="freq">${item.frecuencia}x</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // ============= LOTO PLUS FUNCTIONS =============
+        async function guardarLoto() {
+            const concurso = document.getElementById('loto-concurso').value;
+            const fecha = document.getElementById('loto-fecha').value;
+            const tradicional = obtenerNumerosLoto('tradicional');
+            const match = obtenerNumerosLoto('match');
+            const desquite = obtenerNumerosLoto('desquite');
+            const saleOSale = obtenerNumerosLoto('sale');
+            const jack = parseInt(document.getElementById('loto-jack').value);
+            
+            if (!concurso || !fecha || tradicional.length !== 6 || match.length !== 6 || 
+                desquite.length !== 6 || saleOSale.length !== 6 || isNaN(jack) || jack < 0 || jack > 9) {
+                mostrarStatus('loto', 'Completa todos los campos: 6 números cada sorteo + Jack (0-9)', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/loto-plus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        concurso: parseInt(concurso),
+                        fecha,
+                        tradicional,
+                        match,
+                        desquite,
+                        saleOSale,
+                        numeroJack: jack
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    mostrarStatus('loto', `✅ Sorteo Loto Plus ${concurso} guardado correctamente`, 'success');
+                    limpiarFormulario('loto');
+                    // Actualizar frecuencias automáticamente
+                    setTimeout(() => cargarFrecuenciasLoto(), 500);
+                } else {
+                    mostrarStatus('loto', `❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                mostrarStatus('loto', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function cargarFrecuenciasLoto() {
+            try {
+                const response = await fetch('/frecuencias-loto-plus');
+                const data = await response.json();
+                
+                // Actualizar la visualización permanente
+                actualizarFrecuenciasPermanentesLoto(data);
+                
+                mostrarStatus('loto', '📊 Frecuencias Loto Plus actualizadas', 'success');
+            } catch (error) {
+                mostrarStatus('loto', `❌ Error cargando frecuencias: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarFrecuenciasPermanentesLoto(data) {
+            const container = document.getElementById('loto-frecuencias-permanentes');
+            
+            if (data.numeros.length === 0) {
+                container.innerHTML = '<p>No hay datos de sorteos Loto Plus aún</p>';
+                return;
+            }
+            
+            // Crear secciones para números y jacks
+            let html = '<div class="loto-section"><h4>Números (0-45)</h4><div class="frecuencias-grid">';
+            
+            data.numeros.forEach((item, index) => {
+                const esTop10 = index < 10;
+                const clase = esTop10 ? 'numero-freq top-10' : 'numero-freq';
+                html += `
+                    <div class="${clase}" title="Número ${item.numero}: ${item.frecuencia} apariciones">
+                        <span class="numero">${item.numero.toString().padStart(2, '0')}</span>
+                        <span class="freq">${item.frecuencia}x</span>
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
+            
+            if (data.jacks.length > 0) {
+                html += '<div class="loto-section"><h4>Jack (0-9)</h4><div class="frecuencias-grid">';
+                data.jacks.forEach((item) => {
+                    html += `
+                        <div class="numero-freq" title="Jack ${item.numero}: ${item.frecuencia} apariciones">
+                            <span class="numero">${item.numero}</span>
+                            <span class="freq">${item.frecuencia}x</span>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // ============= PASTE FUNCTIONALITY =============
+        function setupPasteListeners() {
+            // Agregar eventos de paste a todos los contenedores de números
+            document.querySelectorAll('.numeros-grid').forEach(grid => {
+                const grupo = grid.getAttribute('data-grupo');
+                
+                // Hacer el contenedor focusable
+                grid.setAttribute('tabindex', '0');
+                
+                // Evento paste
+                grid.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    distribuirNumeros(pastedText, grupo);
+                });
+                
+                // Eventos visuales
+                grid.addEventListener('focus', () => {
+                    grid.classList.add('paste-ready');
+                });
+                
+                grid.addEventListener('blur', () => {
+                    grid.classList.remove('paste-ready');
+                });
+                
+                // También permitir paste en los inputs individuales
+                for (let i = 1; i <= 6; i++) {
+                    const input = document.getElementById(`${grupo}-${i}`);
+                    if (input) {
+                        input.addEventListener('paste', (e) => {
+                            e.preventDefault();
+                            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                            distribuirNumeros(pastedText, grupo);
+                        });
+                    }
+                }
+            });
+        }
+        
+        function distribuirNumeros(texto, grupo) {
+            // Extraer números del texto pegado
+            const numeros = extraerNumeros(texto);
+            
+            if (numeros.length === 0) {
+                console.log('No se encontraron números válidos en el texto pegado');
+                return;
+            }
+            
+            // Distribuir en los inputs (máximo 6)
+            for (let i = 0; i < Math.min(6, numeros.length); i++) {
+                const input = document.getElementById(`${grupo}-${i + 1}`);
+                if (input && numeros[i] >= 0 && numeros[i] <= 45) {
+                    input.value = numeros[i];
+                }
+            }
+            
+            console.log(`Pegados ${Math.min(6, numeros.length)} números en ${grupo}:`, numeros.slice(0, 6));
+        }
+        
+        function extraerNumeros(texto) {
+            // Buscar números en el texto usando regex
+            const matches = texto.match(/\b\d{1,2}\b/g);
+            if (!matches) return [];
+            
+            // Convertir a números y filtrar rango válido
+            return matches
+                .map(n => parseInt(n))
+                .filter(n => n >= 0 && n <= 45)
+                .slice(0, 6); // Máximo 6 números
+        }
+        
+        // ============= UTILITY FUNCTIONS =============
+        function obtenerNumerosQuini(tipo) {
+            const numeros = [];
+            for (let i = 1; i <= 6; i++) {
+                const valor = parseInt(document.getElementById(`quini-${tipo}-${i}`).value);
+                if (!isNaN(valor) && valor >= 0 && valor <= 45) {
+                    numeros.push(valor);
+                }
+            }
+            return numeros;
+        }
+        
+        function obtenerNumerosLoto(tipo) {
+            const numeros = [];
+            for (let i = 1; i <= 6; i++) {
+                const valor = parseInt(document.getElementById(`loto-${tipo}-${i}`).value);
+                if (!isNaN(valor) && valor >= 0 && valor <= 45) {
+                    numeros.push(valor);
+                }
+            }
+            return numeros;
+        }
+        
+        function parseNumeros(texto) {
+            return texto.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+        }
+        
+        function mostrarStatus(tipo, mensaje, clase) {
+            const statusDiv = document.getElementById(tipo + '-status');
+            statusDiv.textContent = mensaje;
+            statusDiv.className = 'status ' + clase;
+            setTimeout(() => statusDiv.textContent = '', 3000);
+        }
+        
+        function limpiarFormulario(tipo) {
+            if (tipo === 'quini') {
+                document.getElementById('quini-concurso').value = '';
+                document.getElementById('quini-fecha').value = new Date().toISOString().split('T')[0];
+                const sorteos = ['primera', 'segunda', 'revancha', 'siempre'];
+                sorteos.forEach(sorteo => {
+                    for (let i = 1; i <= 6; i++) {
+                        document.getElementById(`quini-${sorteo}-${i}`).value = '';
+                    }
+                });
+            } else if (tipo === 'loto') {
+                document.getElementById('loto-concurso').value = '';
+                document.getElementById('loto-fecha').value = new Date().toISOString().split('T')[0];
+                document.getElementById('loto-jack').value = '';
+                const sorteos = ['tradicional', 'match', 'desquite', 'sale'];
+                sorteos.forEach(sorteo => {
+                    for (let i = 1; i <= 6; i++) {
+                        document.getElementById(`loto-${sorteo}-${i}`).value = '';
+                    }
+                });
+            }
+        }
+        
+        // Inicializar fecha de hoy
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('quini-fecha').value = hoy;
+        document.getElementById('loto-fecha').value = hoy;
+        
+        // Cargar tema al iniciar
+        loadTheme();
+        
+        // Configurar funcionalidad de pegado
+        setupPasteListeners();
+        
+        // Cargar frecuencias automáticamente al iniciar (después de un breve delay)
+        setTimeout(() => {
+            cargarFrecuenciasQuini();
+            cargarFrecuenciasLoto();
+        }, 1000);
+    </script>
+</body>
+</html>

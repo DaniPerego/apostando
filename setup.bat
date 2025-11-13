@@ -6,7 +6,7 @@ cls
 echo.
 echo   ╔══════════════════════════════════════════════════════╗
 echo   ║          🎯 PROYECTO APOSTANDO - CONFIGURADOR        ║  
-echo   ║              Quini 6 y Brinco con MySQL             ║
+echo   ║            Quini 6 y Loto Plus con MySQL           ║
 echo   ╚══════════════════════════════════════════════════════╝
 echo.
 

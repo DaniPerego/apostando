@@ -4,7 +4,7 @@
 const API_BASE_URL = '/api';
 
 // Elementos del DOM
-let connectionIndicator, connectionText, formQuini, formBrinco;
+let connectionIndicator, connectionText, formQuini;
 
 // Estado de la aplicación
 let isConnected = false;
@@ -118,16 +118,7 @@ async function loadQuiniData() {
     }
 }
 
-async function loadBrincoData() {
-    try {
-        const sorteos = await apiRequest('/brinco');
-        qs('#modelo-brinco').textContent = JSON.stringify(sorteos, null, 2);
-        return sorteos;
-    } catch (error) {
-        qs('#modelo-brinco').textContent = `Error: ${error.message}`;
-        throw error;
-    }
-}
+
 
 async function loadQuiniFrequencies() {
     try {
@@ -147,36 +138,16 @@ async function loadQuiniFrequencies() {
     }
 }
 
-async function loadBrincoFrequencies() {
-    try {
-        const frequencies = await apiRequest('/brinco/frequencies');
-        const filtered = frequencies.filter(f => f.cantidad > 0);
-        
-        if (filtered.length > 0) {
-            const freqText = `Números más sorteados:\n` +
-                filtered.map(f => `${String(f.numero).padStart(2,'0')}: ${f.cantidad} veces`).join('\n');
-            qs('#frecuencias-brinco').textContent = freqText;
-        } else {
-            qs('#frecuencias-brinco').textContent = '(sin datos)';
-        }
-    } catch (error) {
-        console.error('Error cargando frecuencias Brinco:', error);
-        qs('#frecuencias-brinco').textContent = `Error: ${error.message}`;
-    }
-}
+
 
 async function loadAllData() {
     setLoading('#modelo-quini', true);
-    setLoading('#modelo-brinco', true);
     setLoading('#frecuencias-quini', true);
-    setLoading('#frecuencias-brinco', true);
     
     try {
         await Promise.all([
             loadQuiniData(),
-            loadBrincoData(),
-            loadQuiniFrequencies(),
-            loadBrincoFrequencies()
+            loadQuiniFrequencies()
         ]);
         updateConnectionStatus(true);
     } catch (error) {
@@ -184,9 +155,7 @@ async function loadAllData() {
         console.error('Error loading data:', error);
     } finally {
         setLoading('#modelo-quini', false);
-        setLoading('#modelo-brinco', false);
         setLoading('#frecuencias-quini', false);
-        setLoading('#frecuencias-brinco', false);
     }
 }
 
@@ -208,7 +177,9 @@ async function handleQuiniSubmit(event) {
         const segundaDelQuini = parseNumbers(formData.get('segundaDelQuini'), { min: 1, max: 45, requiredCount: 6 });
         const revancha = parseNumbers(formData.get('revancha'), { min: 1, max: 45, requiredCount: 6 });
         const siempreSale = parseNumbers(formData.get('siempreSale'), { min: 1, max: 45, requiredCount: 6 });
-        const premioExtra = parseNumbers(formData.get('premioExtra') || '', { min: 1, max: 45, allowUpTo: 18 });
+        
+        // Generar Premio Extra automáticamente: combinar primer sorteo + segunda + revancha
+        const premioExtra = [...primerSorteo, ...segundaDelQuini, ...revancha].sort((a, b) => a - b);
 
         const sorteoData = {
             concursoId,
@@ -240,48 +211,7 @@ async function handleQuiniSubmit(event) {
     }
 }
 
-async function handleBrincoSubmit(event) {
-    event.preventDefault();
-    
-    const submitBtn = event.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Guardando...';
-    
-    try {
-        const formData = new FormData(event.target);
-        
-        const concursoId = parseInt(formData.get('concursoIdBrinco'));
-        const fecha = formData.get('fecha');
-        const brincoTradicional = parseNumbers(formData.get('brincoTradicional'), { min: 1, max: 45, requiredCount: 4 });
-        const brincoJunior = parseNumbers(formData.get('brincoJunior'), { min: 1, max: 45, requiredCount: 4 });
 
-        const sorteoData = {
-            concursoId,
-            fecha,
-            brincoTradicional,
-            brincoJunior
-        };
-
-        await apiRequest('/brinco', {
-            method: 'POST',
-            body: JSON.stringify(sorteoData)
-        });
-
-        event.target.reset();
-        showMessage('#mensaje-brinco', `Sorteo Brinco #${concursoId} guardado exitosamente en la base de datos.`, false);
-        
-        // Recargar datos
-        await loadAllData();
-        
-    } catch (error) {
-        console.error('Error submitting Brinco:', error);
-        showMessage('#mensaje-brinco', `Error: ${error.message}`, true);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-    }
-}
 
 // === FUNCIONES LOTO PLUS ===
 
@@ -292,41 +222,41 @@ let lotoPlusSorteos = [];
 function loadLotoPlusFrequencies() {
     try {
         if (lotoPlusSorteos.length === 0) {
-            qs('#frecuencias-loto-plus-principal').textContent = '(sin datos)';
-            qs('#frecuencias-loto-plus-jackpot').textContent = '(sin datos)';
+            qs('#frecuencias-loto-plus').textContent = '(sin datos)';
+            qs('#frecuencias-loto-plus-jack').textContent = '(sin datos)';
             return;
         }
 
         // Usar los datos cargados y la función del archivo loto-plus.js
-        const universoMaximoPrincipal = 35; // Ajustar según programación real
-        const universoMaximoJackpot = 9;    // Ajustar según programación real
+        const universoMaximo = 45; // Números del 1 al 45 como Quini 6
+        const universoMaximoJack = 9; // Jack del 0 al 9
         
-        const resultado = calcularFrecuenciasLotoPlus(lotoPlusSorteos, universoMaximoPrincipal, universoMaximoJackpot);
+        const resultado = calcularFrecuenciasLotoPlus(lotoPlusSorteos, universoMaximo, universoMaximoJack);
         
-        // Mostrar estadísticas Principal
+        // Mostrar estadísticas de números principales (1-45)
         const filteredPrincipal = resultado.principal.filter(f => f.apariciones > 0);
         if (filteredPrincipal.length > 0) {
-            const freqTextPrincipal = 'Números más sorteados:\n' +
+            const freqTextPrincipal = 'Números más sorteados (1-45):\n' +
                 filteredPrincipal.map(f => `${String(f.numero).padStart(2,'0')}: ${f.apariciones} veces (${f.frecuenciaRelativa.toFixed(1)}%)`).join('\n');
-            qs('#frecuencias-loto-plus-principal').textContent = freqTextPrincipal;
+            qs('#frecuencias-loto-plus').textContent = freqTextPrincipal;
         } else {
-            qs('#frecuencias-loto-plus-principal').textContent = '(sin datos)';
+            qs('#frecuencias-loto-plus').textContent = '(sin datos)';
         }
         
-        // Mostrar estadísticas Jackpot
-        const filteredJackpot = resultado.jackpot.filter(f => f.apariciones > 0);
-        if (filteredJackpot.length > 0) {
-            const freqTextJackpot = 'Números más sorteados:\n' +
-                filteredJackpot.map(f => `${String(f.numero).padStart(2,'0')}: ${f.apariciones} veces (${f.frecuenciaRelativa.toFixed(1)}%)`).join('\n');
-            qs('#frecuencias-loto-plus-jackpot').textContent = freqTextJackpot;
+        // Mostrar estadísticas de números Jack (0-9)
+        const filteredJack = resultado.jack.filter(f => f.apariciones > 0);
+        if (filteredJack.length > 0) {
+            const freqTextJack = 'Números Jack más sorteados (0-9):\n' +
+                filteredJack.map(f => `${f.numero}: ${f.apariciones} veces (${f.frecuenciaRelativa.toFixed(1)}%)`).join('\n');
+            qs('#frecuencias-loto-plus-jack').textContent = freqTextJack;
         } else {
-            qs('#frecuencias-loto-plus-jackpot').textContent = '(sin datos)';
+            qs('#frecuencias-loto-plus-jack').textContent = '(sin datos)';
         }
         
     } catch (error) {
         console.error('Error cargando frecuencias Loto Plus:', error);
-        qs('#frecuencias-loto-plus-principal').textContent = `Error: ${error.message}`;
-        qs('#frecuencias-loto-plus-jackpot').textContent = `Error: ${error.message}`;
+        qs('#frecuencias-loto-plus').textContent = `Error: ${error.message}`;
+        qs('#frecuencias-loto-plus-jack').textContent = `Error: ${error.message}`;
     }
 }
 
@@ -336,9 +266,11 @@ function displayLotoPlusData() {
         const displayData = lotoPlusSorteos.map(sorteo => ({
             concursoID_LotoPlus: sorteo.concursoID_LotoPlus,
             fechaSorteo: sorteo.fechaSorteo,
-            sorteoPrincipal: sorteo.sorteoPrincipal,
-            sorteoJackpot: sorteo.sorteoJackpot,
-            loto5Plus: sorteo.loto5Plus
+            tradicional: sorteo.tradicional,
+            match: sorteo.match,
+            desquite: sorteo.desquite,
+            saleOSale: sorteo.saleOSale,
+            numeroJack: sorteo.numeroJack
         }));
         
         qs('#modelo-loto-plus').textContent = JSON.stringify(displayData, null, 2);
@@ -361,16 +293,24 @@ async function handleLotoPlusSubmit(event) {
         
         const concursoID_LotoPlus = parseInt(formData.get('concursoIdLotoPlus'));
         const fechaSorteo = formData.get('fecha');
-        const sorteoPrincipal = parseNumbers(formData.get('sorteoPrincipal'), { min: 0, max: 35, requiredCount: 6 });
-        const sorteoJackpot = parseNumbers(formData.get('sorteoJackpot'), { min: 0, max: 9, requiredCount: 2 });
-        const loto5Plus = parseNumbers(formData.get('loto5Plus'), { min: 0, max: 35, requiredCount: 5 });
+        const tradicional = parseNumbers(formData.get('tradicional'), { min: 1, max: 45, requiredCount: 6 });
+        const match = parseNumbers(formData.get('match'), { min: 1, max: 45, requiredCount: 6 });
+        const desquite = parseNumbers(formData.get('desquite'), { min: 1, max: 45, requiredCount: 6 });
+        const saleOSale = parseNumbers(formData.get('saleOSale'), { min: 1, max: 45, requiredCount: 6 });
+        const numeroJack = parseInt(formData.get('numeroJack'));
+
+        if (numeroJack < 0 || numeroJack > 9) {
+            throw new Error('El número Jack debe estar entre 0 y 9');
+        }
 
         const sorteoData = {
             concursoID_LotoPlus,
             fechaSorteo,
-            sorteoPrincipal: sorteoPrincipal.map(n => String(n).padStart(2, '0')),
-            sorteoJackpot: sorteoJackpot.map(n => String(n).padStart(2, '0')),
-            loto5Plus: loto5Plus.map(n => String(n).padStart(2, '0'))
+            tradicional: tradicional.map(n => String(n).padStart(2, '0')),
+            match: match.map(n => String(n).padStart(2, '0')),
+            desquite: desquite.map(n => String(n).padStart(2, '0')),
+            saleOSale: saleOSale.map(n => String(n).padStart(2, '0')),
+            numeroJack
         };
 
         // Agregar al array local (simulando persistencia)
@@ -397,7 +337,6 @@ function generateAndDownloadSQL() {
     try {
         // Crear un SQL simple basado en los datos actuales
         const quinData = JSON.parse(qs('#modelo-quini').textContent || '[]');
-        const brincoData = JSON.parse(qs('#modelo-brinco').textContent || '[]');
         
         const lines = [];
         lines.push('-- Exportación de datos desde el sistema web');
@@ -438,21 +377,42 @@ function generateAndDownloadSQL() {
     }
 }
 
+// Función para cargar datos de prueba
+async function loadTestData() {
+    const btn = qs('#load-test-data');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Cargando...';
+    
+    try {
+        const response = await apiRequest('/test/load-data', {
+            method: 'POST'
+        });
+        
+        showMessage('#mensaje-quini', `✅ ${response.message}. Sorteos Quini 6: ${response.inserted.quini6}`, false);
+        
+        // Recargar datos después de la carga
+        await loadAllData();
+        
+    } catch (error) {
+        console.error('Error cargando datos de prueba:', error);
+        showMessage('#mensaje-quini', `❌ Error cargando datos de prueba: ${error.message}`, true);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+}
+
 // Inicialización
 function init() {
     // Obtener elementos
     connectionIndicator = qs('#connection-indicator');
     connectionText = qs('#connection-text');
     formQuini = qs('#form-quini');
-    formBrinco = qs('#form-brinco');
     
     // Configurar event listeners
     if (formQuini) {
         formQuini.addEventListener('submit', handleQuiniSubmit);
-    }
-    
-    if (formBrinco) {
-        formBrinco.addEventListener('submit', handleBrincoSubmit);
     }
     
     const formLotoPlus = qs('#form-loto-plus');
@@ -470,6 +430,11 @@ function init() {
         exportBtn.addEventListener('click', generateAndDownloadSQL);
     }
     
+    const loadTestDataBtn = qs('#load-test-data');
+    if (loadTestDataBtn) {
+        loadTestDataBtn.addEventListener('click', loadTestData);
+    }
+    
     // Cargar datos iniciales
     loadAllData();
     
@@ -482,7 +447,6 @@ function init() {
     // Cargar estadísticas adicional después de un pequeño retraso
     setTimeout(() => {
         loadQuiniFrequencies();
-        loadBrincoFrequencies();
         loadLotoPlusFrequencies();
     }, 2000);
 }

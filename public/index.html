@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frecuencias Quini 6 y Brinco - Conectado a MySQL</title>
+    <title>Frecuencias Quini 6 y Loto Plus - Conectado a MySQL</title>
     <style>
         body {
             font-family: system-ui, sans-serif;
@@ -75,8 +75,7 @@
             font-size: 0.9rem;
             color: #555;
         }
-        #frecuencias-quini,
-        #frecuencias-brinco {
+        #frecuencias-quini {
             background: #f8f9fa;
             border: 1px solid #e9ecef;
             padding: 1rem;
@@ -116,7 +115,7 @@
 </head>
 <body>
     <h1>
-        Modelado y Frecuencias de Quini 6 / Brinco
+        Modelado y Frecuencias de Quini 6 / Loto Plus
         <div class="connection-status">
             <span id="connection-indicator" class="status-indicator status-loading"></span>
             <span id="connection-text">Conectando al servidor...</span>
@@ -150,38 +149,15 @@
                 Siempre Sale <span class="nota-campos">6 números entre 00 y 45</span>
                 <input type="text" name="siempreSale" placeholder="e.g. 01 07 14 22 29 41" required>
             </label>
-            <label>
-                Premio Extra <span class="nota-campos">Hasta 18 números únicos entre 00 y 45 (opcional)</span>
-                <input type="text" name="premioExtra" placeholder="e.g. 03,12,18,26,33,44,02,05,08,16,21,27">
-            </label>
+            <p style="font-size: 0.9rem; color: #666; margin: 0.5rem 0;">
+                <strong>Premio Extra:</strong> Se genera automáticamente combinando los números del Primer Sorteo, Segunda del Quini y Revancha (18 números únicos).
+            </p>
             <button type="submit">Agregar sorteo Quini 6</button>
             <p id="mensaje-quini" class="mensaje" hidden></p>
         </form>
     </section>
 
-    <section>
-        <h2>Carga de Sorteos - Brinco</h2>
-        <form id="form-brinco">
-            <label>
-                Concurso ID (Brinco)
-                <input type="number" name="concursoIdBrinco" min="1" required>
-            </label>
-            <label>
-                Fecha del sorteo
-                <input type="date" name="fecha" required>
-            </label>
-            <label>
-                Brinco Tradicional <span class="nota-campos">6 números entre 00 y 39</span>
-                <input type="text" name="brincoTradicional" placeholder="e.g. 00,07,14,19,28,36" required>
-            </label>
-            <label>
-                Brinco Junior <span class="nota-campos">6 números entre 00 y 39</span>
-                <input type="text" name="brincoJunior" placeholder="e.g. 03 09 15 21 30 37" required>
-            </label>
-            <button type="submit">Agregar sorteo Brinco</button>
-            <p id="mensaje-brinco" class="mensaje" hidden></p>
-        </form>
-    </section>
+
 
     <section>
         <h2>Carga de Sorteos - Loto Plus</h2>
@@ -195,36 +171,42 @@
                 <input type="date" name="fecha" required>
             </label>
             <label>
-                Sorteo Principal <span class="nota-campos">6 números entre 00 y 35 (ejemplo)</span>
-                <input type="text" name="sorteoPrincipal" placeholder="e.g. 03,07,11,18,24,29" required>
+                Tradicional <span class="nota-campos">6 números entre 01 y 45</span>
+                <input type="text" name="tradicional" placeholder="e.g. 03,12,18,26,33,44" required>
             </label>
             <label>
-                Sorteo Jackpot <span class="nota-campos">2 números entre 00 y 9 (ejemplo)</span>
-                <input type="text" name="sorteoJackpot" placeholder="e.g. 01,05" required>
+                Match <span class="nota-campos">6 números entre 01 y 45</span>
+                <input type="text" name="match" placeholder="e.g. 05,11,19,24,37,43" required>
             </label>
             <label>
-                Loto 5 Plus <span class="nota-campos">5 números entre 00 y 35 (ejemplo)</span>
-                <input type="text" name="loto5Plus" placeholder="e.g. 03,11,25,30,35" required>
+                Desquite <span class="nota-campos">6 números entre 01 y 45</span>
+                <input type="text" name="desquite" placeholder="e.g. 02,05,08,16,21,27" required>
+            </label>
+            <label>
+                Sale o Sale <span class="nota-campos">6 números entre 01 y 45</span>
+                <input type="text" name="saleOSale" placeholder="e.g. 01,07,14,22,29,41" required>
+            </label>
+            <label>
+                Número Jack <span class="nota-campos">1 número entre 0 y 9</span>
+                <input type="number" name="numeroJack" min="0" max="9" required>
             </label>
             <button type="submit">Agregar sorteo Loto Plus</button>
             <p id="mensaje-loto-plus" class="mensaje" hidden></p>
         </form>
     </section>
 
+    <!-- Secciones ocultas - Modelos de datos JSON (para uso futuro) -->
+    <!-- 
     <section>
         <h2>Modelo de Datos - Quini 6</h2>
         <pre id="modelo-quini">Cargando datos...</pre>
     </section>
 
     <section>
-        <h2>Modelo de Datos - Brinco</h2>
-        <pre id="modelo-brinco">Cargando datos...</pre>
-    </section>
-
-    <section>
         <h2>Modelo de Datos - Loto Plus</h2>
         <pre id="modelo-loto-plus">Cargando datos...</pre>
     </section>
+    -->
 
     <section>
         <h2>Estadísticas de Números Sorteados</h2>
@@ -233,19 +215,18 @@
         <h3>Quini 6 - Números más repetidos</h3>
         <div id="frecuencias-quini">Cargando estadísticas...</div>
         
-        <h3>Brinco - Números más repetidos</h3>
-        <div id="frecuencias-brinco">Cargando estadísticas...</div>
         
-        <h3>Loto Plus - Números más repetidos (Principal)</h3>
-        <div id="frecuencias-loto-plus-principal">Cargando estadísticas...</div>
+        <h3>Loto Plus - Números más repetidos</h3>
+        <div id="frecuencias-loto-plus">Cargando estadísticas...</div>
         
-        <h3>Loto Plus - Números más repetidos (Jackpot)</h3>
-        <div id="frecuencias-loto-plus-jackpot">Cargando estadísticas...</div>
+        <h3>Loto Plus - Números Jack más repetidos</h3>
+        <div id="frecuencias-loto-plus-jack">Cargando estadísticas...</div>
     </section>
 
     <section>
         <h2>Acciones</h2>
         <button id="refresh-data">🔄 Actualizar datos</button>
+        <button id="load-test-data">🎲 Cargar 10 sorteos de prueba</button>
         <button id="export-sql">📥 Exportar SQL</button>
         <p><em>Los datos ahora se guardan en la base de datos MySQL y se sincronizan automáticamente.</em></p>
     </section>

@@ -1,10 +1,10 @@
-# 🎯 Apostando - Sistema de Quini 6 y Brinco
+# 🎯 Apostando - Sistema de Quini 6 y Loto Plus
 
-Sistema completo para el seguimiento y análisis estadístico de sorteos de Quini 6 y Brinco, con interfaz web y base de datos MySQL.
+Sistema completo para el seguimiento y análisis estadístico de sorteos de Quini 6 y Loto Plus, con interfaz web y base de datos MySQL.
 
 ## ✨ Características
 
-- 🎲 **Carga de sorteos**: Quini 6 (Primer Sorteo, Segunda del Quini, Revancha, Siempre Sale, Premio Extra) y Brinco (Tradicional, Junior)
+- 🎲 **Carga de sorteos**: Quini 6 (Primer Sorteo, Segunda del Quini, Revancha, Siempre Sale, Premio Extra) y Loto Plus (Tradicional, Match, Desquite, Sale o Sale + Jack)
 - 📊 **Estadísticas en tiempo real**: Números más sorteados ordenados por frecuencia
 - 🗄️ **Base de datos MySQL**: Persistencia de datos con API REST
 - 🌐 **Interfaz web moderna**: Responsive y fácil de usar
@@ -59,8 +59,7 @@ apostando/
 ├── config/
 │   └── database.js         # Configuración MySQL y pool de conexiones
 ├── routes/
-│   ├── quini.js           # API endpoints para Quini 6
-│   └── brinco.js          # API endpoints para Brinco
+│   └── quini.js           # API endpoints para Quini 6
 ├── public/
 │   ├── index.html         # Interfaz web principal
 │   └── js/
@@ -83,13 +82,6 @@ apostando/
 - `GET /api/quini/frequencies` - Estadísticas de números
 - `DELETE /api/quini/:id` - Eliminar sorteo
 
-### Brinco Endpoints
-
-- `GET /api/brinco` - Obtener todos los sorteos
-- `GET /api/brinco/:id` - Obtener sorteo específico
-- `POST /api/brinco` - Crear nuevo sorteo
-- `GET /api/brinco/frequencies` - Estadísticas de números
-- `DELETE /api/brinco/:id` - Eliminar sorteo
 
 ### Ejemplo de uso
 
@@ -139,7 +131,7 @@ npm test
 
 ### Agregar nuevos endpoints
 
-1. Editar `/routes/quini.js` o `/routes/brinco.js`
+1. Editar `/routes/quini.js`
 2. Actualizar `/public/js/app-api.js` para consumir la nueva API
 3. Reiniciar servidor con `npm run dev`
 
@@ -192,20 +184,7 @@ CREATE TABLE quini_numeros (
     FOREIGN KEY (sorteo_id) REFERENCES quini_sorteos(id)
 );
 
--- Brinco
-CREATE TABLE brinco_sorteos (
-    id INT PRIMARY KEY,
-    fecha DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
-CREATE TABLE brinco_numeros (
-    sorteo_id INT,
-    tipo ENUM('tradicional','junior'),
-    numero TINYINT,
-    PRIMARY KEY (sorteo_id, tipo, numero),
-    FOREIGN KEY (sorteo_id) REFERENCES brinco_sorteos(id)
-);
 ```
 
 ## 📄 Licencia

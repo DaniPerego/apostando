@@ -66,26 +66,6 @@ async function initializeTables() {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         `);
 
-        // Crear tablas Brinco
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS brinco_sorteos (
-                id INT PRIMARY KEY,
-                fecha DATE NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
-
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS brinco_numeros (
-                sorteo_id INT NOT NULL,
-                tipo ENUM('tradicional','junior') NOT NULL,
-                numero TINYINT NOT NULL,
-                PRIMARY KEY (sorteo_id, tipo, numero),
-                FOREIGN KEY (sorteo_id) REFERENCES brinco_sorteos(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        `);
-
         connection.release();
         console.log('✅ Tablas inicializadas correctamente');
         return true;

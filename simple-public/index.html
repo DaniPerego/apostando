@@ -1,0 +1,3544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apostando - Simple</title>
+    <style>
+        * { box-sizing: border-box; }
+        
+        /* VARIABLES CSS PARA TEMAS */
+        :root {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: white;
+            --bg-tertiary: #f8f9fa;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --accent-color: #007bff;
+            --accent-hover: #0056b3;
+            --success-bg: #d4edda;
+            --success-text: #155724;
+            --error-bg: #f8d7da;
+            --error-text: #721c24;
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #333;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #555;
+            --accent-color: #4dabf7;
+            --accent-hover: #339af0;
+            --success-bg: #2b8a3e;
+            --success-text: #d3f9d8;
+            --error-bg: #c92a2a;
+            --error-text: #ffc9c9;
+        }
+        
+        body { 
+            font-family: system-ui, sans-serif; 
+            max-width: 900px; 
+            margin: 1rem auto; 
+            padding: 1rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+        
+        /* TABS */
+        .tabs { 
+            display: flex; 
+            margin-bottom: 1rem; 
+            background: var(--bg-secondary);
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .tab { 
+            flex: 1;
+            padding: 1rem; 
+            text-align: center;
+            cursor: pointer; 
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border-color);
+            font-weight: bold;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        .tab:last-child { border-right: none; }
+        .tab.active { background: var(--accent-color); color: white; }
+        
+        /* CARDS */
+        .card { 
+            background: var(--bg-secondary); 
+            border-radius: 0 0 8px 8px; 
+            padding: 1.5rem; 
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            border-top: none;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* INPUTS */
+        input, button { 
+            padding: 0.5rem; 
+            margin: 0.25rem; 
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+        }
+        
+        button { 
+            background: var(--accent-color); 
+            color: white; 
+            border: none; 
+            cursor: pointer;
+            min-width: 120px;
+        }
+        button:hover { background: var(--accent-hover); }
+        button:disabled { background: #666; cursor: not-allowed; }
+        
+        /* LAYOUT */
+        .row { display: flex; gap: 0.5rem; align-items: center; margin: 0.5rem 0; }
+        .label { min-width: 140px; font-weight: bold; }
+        .jack-input { width: 60px; }
+        .numeros-grid { 
+            display: flex; 
+            gap: 0.3rem; 
+            flex-wrap: wrap;
+            position: relative;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .numeros-grid:hover {
+            background: var(--bg-tertiary);
+        }
+        
+        .numeros-grid.paste-ready {
+            background: var(--accent-color);
+            opacity: 0.8;
+        }
+        
+        .numeros-grid.paste-ready::after {
+            content: "Pegá números aquí";
+            position: absolute;
+            top: -20px;
+            left: 0;
+            font-size: 12px;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .numero-input { 
+            width: 50px; 
+            text-align: center; 
+            font-weight: bold;
+        }
+        
+        /* STATS */
+        .frecuencias { 
+            background: var(--bg-tertiary); 
+            padding: 1rem; 
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-line;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .card-frecuencias {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .card-frecuencias h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .frecuencias-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .numero-freq {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .numero-freq:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .numero-freq .numero {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+        }
+        
+        .numero-freq:hover .numero {
+            color: white;
+        }
+        
+        .numero-freq .freq {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .numero-freq:hover .freq {
+            color: white;
+        }
+        
+        .numero-freq.top-10 {
+            border-color: var(--accent-color);
+            background: linear-gradient(45deg, var(--bg-tertiary), var(--bg-secondary));
+        }
+        
+        /* ESTILOS PARA SOLAPAS DESPLEGABLES */
+        .solapa-header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        
+        .solapa-header:hover {
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+            border-color: var(--accent-color);
+            transform: translateX(5px);
+        }
+        
+        .solapa-header h3 {
+            margin: 0;
+            color: var(--accent-color);
+        }
+        
+        .solapa-icono {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .solapa-icono.abierta {
+            transform: rotate(180deg);
+        }
+        
+        .solapa-contenido {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .solapa-contenido.abierta {
+            max-height: 5000px;
+        }
+        
+        /* ESTILOS PARA ANÁLISIS DE PATRONES */
+        .card-patrones {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .card-patrones h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .patrones-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .numero-patron {
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem 0.5rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+        
+        .numero-patron:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .numero-patron .numero {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            text-align: center;
+            margin-bottom: 0.25rem;
+        }
+        
+        .numero-patron .info {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.3;
+        }
+        
+        .numero-patron .sorteos-sin-salir {
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            text-align: center;
+        }
+        
+        /* Estados de temperatura */
+        .numero-patron.muy-frio {
+            border-color: #c92a2a;
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(201, 42, 42, 0.1) 100%);
+        }
+        
+        .numero-patron.muy-frio .numero {
+            color: #c92a2a;
+        }
+        
+        .numero-patron.muy-frio .sorteos-sin-salir {
+            color: #c92a2a;
+        }
+        
+        .numero-patron.frio {
+            border-color: #f08c00;
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(240, 140, 0, 0.1) 100%);
+        }
+        
+        .numero-patron.frio .numero {
+            color: #f08c00;
+        }
+        
+        .numero-patron.frio .sorteos-sin-salir {
+            color: #f08c00;
+        }
+        
+        .numero-patron.tibio {
+            border-color: var(--accent-color);
+        }
+        
+        .numero-patron.caliente {
+            border-color: #2b8a3e;
+            background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(43, 138, 62, 0.1) 100%);
+        }
+        
+        .numero-patron.caliente .numero {
+            color: #2b8a3e;
+        }
+        
+        .numero-patron.caliente .sorteos-sin-salir {
+            color: #2b8a3e;
+        }
+        
+        .patron-legend {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+        }
+        
+        .patron-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .patron-legend-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid;
+        }
+        
+        .patron-legend-box.muy-frio {
+            border-color: #c92a2a;
+            background: rgba(201, 42, 42, 0.1);
+        }
+        
+        .patron-legend-box.frio {
+            border-color: #f08c00;
+            background: rgba(240, 140, 0, 0.1);
+        }
+        
+        .patron-legend-box.tibio {
+            border-color: var(--accent-color);
+            background: var(--bg-tertiary);
+        }
+        
+        .patron-legend-box.caliente {
+            border-color: #2b8a3e;
+            background: rgba(43, 138, 62, 0.1);
+        }
+        
+        .loto-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .loto-section h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+            font-size: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.25rem;
+        }
+        
+        .status { 
+            padding: 0.5rem; 
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }
+        .success { background: var(--success-bg); color: var(--success-text); }
+        .error { background: var(--error-bg); color: var(--error-text); }
+        
+        /* ESTILOS PARA HISTORIAL DE SORTEOS */
+        .historial-section {
+            margin-bottom: 1rem;
+        }
+        
+        .historial-toggle {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .historial-toggle:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-color);
+        }
+        
+        .historial-toggle.expanded {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: transparent;
+        }
+        
+        .historial-content {
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            background: var(--bg-primary);
+            max-height: 300px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+        
+        .historial-content.collapsed {
+            max-height: 0;
+            border: none;
+            overflow: hidden;
+        }
+        
+        .historial-simple {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .sorteo-simple {
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s ease;
+        }
+        
+        .sorteo-simple:last-child {
+            border-bottom: none;
+        }
+        
+        .sorteo-simple:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .concurso-numero {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .sorteo-fecha {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 600px) {
+            .sorteo-simple {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+        }
+
+        /* ESTILOS PARA SECCIONES DE APUESTA */
+        .apuesta-input {
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .apuesta-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        
+        .apuesta-input.acierto {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-color: #28a745;
+            color: #155724;
+            font-weight: bold;
+            animation: acierto-pulse 0.6s ease-in-out;
+        }
+        
+        [data-theme="dark"] .apuesta-input.acierto {
+            background: linear-gradient(135deg, #1e4d22, #2d5a31);
+            border-color: #40c057;
+            color: #51cf66;
+        }
+        
+        @keyframes acierto-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .estadisticas-aciertos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            display: block;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        
+        .mejor-resultado {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        [data-theme="dark"] .mejor-resultado {
+            background: linear-gradient(135deg, #3d3017, #4a3819);
+            border-color: #ffd43b;
+            color: #ffec99;
+        }
+
+        /* ESTILOS PARA SUGERENCIAS DE APUESTAS */
+        
+        .sugerencias-header {
+            background: linear-gradient(135deg, var(--accent-color), #5a9fd4);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .sugerencias-grid {
+            display: grid;
+            gap: 0.75rem;
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 8px 8px;
+            border-top: none;
+        }
+        
+        .sugerencia-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .sugerencia-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: var(--accent-color);
+        }
+        
+        .sugerencia-header-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .sugerencia-titulo {
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+        
+        .sugerencia-estrategia {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        .sugerencia-numeros {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-align: center;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            letter-spacing: 2px;
+            border: 2px solid var(--border-color);
+        }
+        
+        .sugerencia-info {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        .btn-usar-sugerencia {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+        
+        .btn-usar-sugerencia:hover {
+            background: linear-gradient(135deg, #218838, #17a2b8);
+            transform: translateY(-1px);
+        }
+        
+        .btn-accent {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-accent:hover {
+            background: linear-gradient(135deg, #ee5a24, #e55039);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(238, 90, 36, 0.3);
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* ESTILOS PARA SOLAPAS DE RESULTADOS */
+        .solapa-resultados {
+            margin-top: 1rem;
+        }
+        
+        .solapa-toggle {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .solapa-toggle:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-color);
+        }
+        
+        .solapa-toggle.expanded {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: transparent;
+            background: var(--accent-color);
+            color: white;
+        }
+        
+        .solapa-content {
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            background: var(--bg-primary);
+            max-height: 600px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+        
+        .solapa-content.collapsed {
+            max-height: 0;
+            border: none;
+            overflow: hidden;
+        }
+        
+        .sugerencias-container-inner,
+        .resultado-apuesta-inner {
+            padding: 1rem;
+        }
+
+        /* ESTILOS PARA HISTORIAL EDITABLE */
+        .sorteo-simple-editable {
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s ease;
+        }
+        
+        .sorteo-simple-editable:last-child {
+            border-bottom: none;
+        }
+        
+        .sorteo-simple-editable:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .sorteo-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .sorteo-fecha {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .sorteo-concurso {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .sorteo-acciones {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-editar, .btn-eliminar {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-editar:hover {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: scale(1.1);
+        }
+        
+        .btn-eliminar:hover {
+            background: #dc3545;
+            border-color: #dc3545;
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 600px) {
+            .sorteo-simple-editable {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .sorteo-acciones {
+                align-self: flex-end;
+            }
+        }
+
+        /* ESTILOS PARA SORTEOS EXPANDIBLES */
+        .sorteo-expandible {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+        
+        .sorteo-header {
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s ease;
+        }
+        
+        .sorteo-header:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .sorteo-info-principal {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+        
+        .sorteo-fecha-concurso {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        /* ESTILOS PARA TROFEOS DE GANADORES */
+        .ganadores-info {
+            display: flex !important;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: auto;
+            margin-right: 1rem;
+            z-index: 10;
+        }
+        
+        .trofeo-clickeable {
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            filter: grayscale(100%) opacity(0.3);
+        }
+        
+        .trofeo-clickeable:hover {
+            transform: scale(1.2);
+            filter: grayscale(100%) opacity(0.6);
+        }
+        
+        .trofeo-clickeable.activo {
+            filter: grayscale(0%) opacity(1);
+            animation: bounce 0.5s ease;
+        }
+        
+        .trofeo-clickeable.activo:hover {
+            filter: grayscale(0%) opacity(1);
+            transform: scale(1.3);
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+        
+        .cantidad-ganadores {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            min-width: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .cantidad-ganadores:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .cantidad-ganadores.editable {
+            border: 2px dashed var(--accent-color);
+        }
+        
+        .btn-toggle-sorteo {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn-toggle-sorteo:hover {
+            transform: scale(1.2);
+        }
+        
+        .sorteo-detalle {
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .sorteo-detalle.collapsed {
+            max-height: 0;
+            border-top: none;
+        }
+        
+        .sorteo-detalle:not(.collapsed) {
+            max-height: 500px;
+        }
+        
+        .numeros-detalle {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .categoria-numeros h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .numeros-linea {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .numero-sorteo {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.4rem 0.7rem;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.9rem;
+            min-width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .numero-sorteo.jack {
+            background: #ff6b35;
+            border-radius: 8px;
+            min-width: 40px;
+            height: 40px;
+            font-size: 1.1rem;
+        }
+        
+        @media (max-width: 600px) {
+            .sorteo-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .sorteo-info-principal {
+                width: 100%;
+            }
+            
+            .sorteo-acciones {
+                align-self: flex-end;
+            }
+            
+            .numeros-detalle {
+                padding: 0.75rem;
+            }
+            
+            .numero-sorteo {
+                min-width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+                padding: 0.3rem 0.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sugerencias-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sugerencia-header-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎲 Apostando - Simple</h1>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+            <span id="theme-icon">🌙</span>
+        </button>
+    </div>
+    
+    <!-- TABS -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('quini')">Quini 6</div>
+        <div class="tab" onclick="switchTab('loto')">Loto Plus</div>
+    </div>
+    
+    <!-- QUINI 6 TAB -->
+    <div id="quini-tab" class="tab-content active">
+        <div class="card">
+            <h2>🎯 Quini 6</h2>
+            <div class="row">
+                <label class="label">Concurso:</label>
+                <input type="number" id="quini-concurso" placeholder="Ej: 2890">
+            </div>
+            <div class="row">
+                <label class="label">Fecha:</label>
+                <input type="date" id="quini-fecha">
+            </div>
+            <div class="row">
+                <label class="label">Primera (6):</label>
+                <div class="numeros-grid" data-grupo="quini-primera">
+                    <input type="number" class="numero-input" id="quini-primera-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-primera-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Segunda (6):</label>
+                <div class="numeros-grid" data-grupo="quini-segunda">
+                    <input type="number" class="numero-input" id="quini-segunda-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-segunda-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Revancha (6):</label>
+                <div class="numeros-grid" data-grupo="quini-revancha">
+                    <input type="number" class="numero-input" id="quini-revancha-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-revancha-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Siempre Sale (6):</label>
+                <div class="numeros-grid" data-grupo="quini-siempre">
+                    <input type="number" class="numero-input" id="quini-siempre-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="quini-siempre-6" min="0" max="45">
+                </div>
+            </div>
+            
+            <button onclick="guardarQuini()">💾 Guardar Sorteo</button>
+            <button onclick="cargarFrecuenciasQuini()">� Actualizar Frecuencias</button>
+            
+            <div id="quini-status"></div>
+            
+            <!-- FRECUENCIAS PERMANENTES -->
+            <div class="solapa-header" onclick="toggleSolapa('quini-frecuencias-solapa')">
+                <h3>📊 Números más frecuentes (Quini 6)</h3>
+                <span class="solapa-icono" id="quini-frecuencias-solapa-icono">▼</span>
+            </div>
+            <div class="solapa-contenido" id="quini-frecuencias-solapa">
+                <div class="card-frecuencias">
+                    <div id="quini-frecuencias-permanentes" class="frecuencias-grid">
+                        Cargando frecuencias...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ANÁLISIS DE PATRONES QUINI 6 -->
+            <div class="solapa-header" onclick="toggleSolapa('quini-patrones-solapa')">
+                <h3>🔍 Análisis de Patrones Temporales (Quini 6)</h3>
+                <span class="solapa-icono" id="quini-patrones-solapa-icono">▼</span>
+            </div>
+            <div class="solapa-contenido" id="quini-patrones-solapa">
+                <div class="card-patrones">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0;">
+                        Números que "deberían" salir pronto según su patrón histórico de aparición
+                    </p>
+                    <button onclick="cargarPatronesQuini()" style="margin: 0.5rem 0;">🔄 Actualizar Patrones</button>
+                    
+                    <div class="patron-legend">
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box muy-frio"></div>
+                            <span>Muy Frío (debe salir pronto)</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box frio"></div>
+                            <span>Frío (debería salir)</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box tibio"></div>
+                            <span>Tibio (normal)</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box caliente"></div>
+                            <span>Caliente (salió reciente)</span>
+                        </div>
+                    </div>
+                    
+                    <div id="quini-patrones-grid" class="patrones-grid">
+                        Cargando patrones...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE APUESTA QUINI 6 -->
+        <div class="solapa-header" onclick="toggleSolapa('quini-apuesta-solapa')" style="margin-top: 1rem;">
+            <h3>🎲 Mi Apuesta Quini 6</h3>
+            <span class="solapa-icono" id="quini-apuesta-solapa-icono">▼</span>
+        </div>
+        <div class="solapa-contenido" id="quini-apuesta-solapa">
+            <div class="card">
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Ingresa tus 6 números apostados para compararlos con los sorteos ganadores
+                </p>
+                
+                <div class="row">
+                <label class="label">Mis Números:</label>
+                <div class="numeros-grid" data-grupo="apuesta-quini">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-quini-1" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-quini-2" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-quini-3" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-quini-4" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-quini-5" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-quini-6" min="0" max="45" placeholder="Nº">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                <button onclick="limpiarApuesta('quini')" class="btn-secondary">🧹 Limpiar</button>
+                <button onclick="compararApuesta('quini')" class="btn-primary">🔍 Comparar con Sorteos</button>
+                <button onclick="generarApuestasInteligentes('quini')" class="btn-accent">🎯 5 Apuestas (Frecuencias)</button>
+                <button onclick="generarApuestasPorPatrones('quini')" class="btn-accent" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">❄️ 5 Apuestas (Patrones)</button>
+            </div>
+            
+            <!-- Solapa de Sugerencias Quini -->
+            <div id="solapa-sugerencias-quini" class="solapa-resultados" style="display: none;">
+                <button type="button" onclick="toggleSolapa('content-sugerencias-quini')" class="solapa-toggle" id="toggle-sugerencias-quini">
+                    🎯 Sugerencias Inteligentes ▼
+                </button>
+                <div id="content-sugerencias-quini" class="solapa-content collapsed">
+                    <div id="sugerencias-quini" class="sugerencias-container-inner"></div>
+                </div>
+            </div>
+            
+            <!-- Solapa de Resultados Quini -->
+            <div id="solapa-resultados-quini" class="solapa-resultados" style="display: none;">
+                <button type="button" onclick="toggleSolapa('content-resultados-quini')" class="solapa-toggle" id="toggle-resultados-quini">
+                    📊 Resultados de la Comparación ▼
+                </button>
+                <div id="content-resultados-quini" class="solapa-content collapsed">
+                    <div id="resultado-apuesta-quini" class="resultado-apuesta-inner"></div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- LOTO PLUS TAB -->
+    <div id="loto-tab" class="tab-content">
+        <div class="card">
+            <h2>🍀 Loto Plus</h2>
+            <div class="row">
+                <label class="label">Concurso:</label>
+                <input type="number" id="loto-concurso" placeholder="Ej: 1234">
+            </div>
+            <div class="row">
+                <label class="label">Fecha:</label>
+                <input type="date" id="loto-fecha">
+            </div>
+            <div class="row">
+                <label class="label">Tradicional (6):</label>
+                <div class="numeros-grid" data-grupo="loto-tradicional">
+                    <input type="number" class="numero-input" id="loto-tradicional-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-tradicional-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Match (6):</label>
+                <div class="numeros-grid" data-grupo="loto-match">
+                    <input type="number" class="numero-input" id="loto-match-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-match-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Desquite (6):</label>
+                <div class="numeros-grid" data-grupo="loto-desquite">
+                    <input type="number" class="numero-input" id="loto-desquite-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-desquite-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Sale o Sale (6):</label>
+                <div class="numeros-grid" data-grupo="loto-sale">
+                    <input type="number" class="numero-input" id="loto-sale-1" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-2" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-3" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-4" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-5" min="0" max="45">
+                    <input type="number" class="numero-input" id="loto-sale-6" min="0" max="45">
+                </div>
+            </div>
+            <div class="row">
+                <label class="label">Jack (0-9):</label>
+                <input type="number" id="loto-jack" class="jack-input" placeholder="7" min="0" max="9">
+            </div>
+            
+            <button onclick="guardarLoto()">💾 Guardar Sorteo</button>
+            <button onclick="cargarFrecuenciasLoto()">� Actualizar Frecuencias</button>
+            
+            <div id="loto-status"></div>
+            
+            <!-- FRECUENCIAS PERMANENTES LOTO PLUS -->
+            <div class="solapa-header" onclick="toggleSolapa('loto-frecuencias-solapa')">
+                <h3>📊 Números más frecuentes (Loto Plus)</h3>
+                <span class="solapa-icono" id="loto-frecuencias-solapa-icono">▼</span>
+            </div>
+            <div class="solapa-contenido" id="loto-frecuencias-solapa">
+                <div class="card-frecuencias">
+                    <div id="loto-frecuencias-permanentes" class="frecuencias-grid">
+                        Cargando frecuencias...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ANÁLISIS DE PATRONES LOTO PLUS -->
+            <div class="solapa-header" onclick="toggleSolapa('loto-patrones-solapa')">
+                <h3>🔍 Análisis de Patrones Temporales (Loto Plus)</h3>
+                <span class="solapa-icono" id="loto-patrones-solapa-icono">▼</span>
+            </div>
+            <div class="solapa-contenido" id="loto-patrones-solapa">
+                <div class="card-patrones">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0;">
+                        Números que "deberían" salir pronto según su patrón histórico de aparición
+                    </p>
+                    <button onclick="cargarPatronesLoto()" style="margin: 0.5rem 0;">🔄 Actualizar Patrones</button>
+                    
+                    <div class="patron-legend">
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box muy-frio"></div>
+                            <span>Muy Frío (debe salir pronto)</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box frio"></div>
+                            <span>Frío (debería salir)</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box tibio"></div>
+                            <span>Tibio (normal)</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box caliente"></div>
+                            <span>Caliente (salió reciente)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="loto-section">
+                        <h4>Números Principales (1-42)</h4>
+                        <div id="loto-patrones-grid" class="patrones-grid">
+                            Cargando patrones...
+                        </div>
+                    </div>
+                    
+                    <div class="loto-section">
+                        <h4>Números Jack (1-10)</h4>
+                        <div id="loto-patrones-jack-grid" class="patrones-grid" style="grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));">
+                            Cargando patrones jack...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE APUESTA LOTO PLUS -->
+        <div class="solapa-header" onclick="toggleSolapa('loto-apuesta-solapa')" style="margin-top: 1rem;">
+            <h3>🍀 Mi Apuesta Loto Plus</h3>
+            <span class="solapa-icono" id="loto-apuesta-solapa-icono">▼</span>
+        </div>
+        <div class="solapa-contenido" id="loto-apuesta-solapa">
+            <div class="card">
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Ingresa tus 6 números + 1 jack para compararlos con los sorteos ganadores
+                </p>
+                
+                <div class="row">
+                <label class="label">Mis Números (6):</label>
+                <div class="numeros-grid" data-grupo="apuesta-loto">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-loto-1" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-loto-2" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-loto-3" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-loto-4" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-loto-5" min="0" max="45" placeholder="Nº">
+                    <input type="number" class="numero-input apuesta-input" id="apuesta-loto-6" min="0" max="45" placeholder="Nº">
+                </div>
+            </div>
+            
+            <div class="row">
+                <label class="label">Mi Jack (0-9):</label>
+                <input type="number" id="apuesta-loto-jack" class="jack-input apuesta-input" placeholder="Jack" min="0" max="9">
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                <button onclick="limpiarApuesta('loto')" class="btn-secondary">🧹 Limpiar</button>
+                <button onclick="compararApuesta('loto')" class="btn-primary">🔍 Comparar con Sorteos</button>
+                <button onclick="generarApuestasInteligentes('loto')" class="btn-accent">🍀 5 Apuestas (Frecuencias)</button>
+                <button onclick="generarApuestasPorPatrones('loto')" class="btn-accent" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">❄️ 5 Apuestas (Patrones)</button>
+            </div>
+            
+            <!-- Solapa de Sugerencias Loto -->
+            <div id="solapa-sugerencias-loto" class="solapa-resultados" style="display: none;">
+                <button type="button" onclick="toggleSolapa('content-sugerencias-loto')" class="solapa-toggle" id="toggle-sugerencias-loto">
+                    🍀 Sugerencias Inteligentes ▼
+                </button>
+                <div id="content-sugerencias-loto" class="solapa-content collapsed">
+                    <div id="sugerencias-loto" class="sugerencias-container-inner"></div>
+                </div>
+            </div>
+            
+            <!-- Solapa de Resultados Loto -->
+            <div id="solapa-resultados-loto" class="solapa-resultados" style="display: none;">
+                <button type="button" onclick="toggleSolapa('content-resultados-loto')" class="solapa-toggle" id="toggle-resultados-loto">
+                    📊 Resultados de la Comparación ▼
+                </button>
+                <div id="content-resultados-loto" class="solapa-content collapsed">
+                    <div id="resultado-apuesta-loto" class="resultado-apuesta-inner"></div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HISTORIAL DE SORTEOS CARGADOS -->
+    <div class="solapa-header" onclick="toggleSolapa('historial-solapa')">
+        <h2 style="margin: 0;">📅 Historial de Sorteos Cargados</h2>
+        <span class="solapa-icono" id="historial-solapa-icono">▼</span>
+    </div>
+    <div class="solapa-contenido" id="historial-solapa">
+        <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                Sorteos ordenados por fecha (más recientes primero)
+            </p>
+            
+            <!-- Quini 6 -->
+        <div class="historial-section">
+            <button type="button" onclick="toggleHistorial('quini')" class="historial-toggle" id="toggle-quini">
+                🎯 Quini 6 (<span id="count-quini">0</span>) ▼
+            </button>
+            <div id="historial-quini" class="historial-content collapsed">
+                <!-- Sorteos Quini 6 se cargarán aquí -->
+            </div>
+        </div>
+        
+        <!-- Loto Plus -->
+        <div class="historial-section">
+            <button type="button" onclick="toggleHistorial('loto')" class="historial-toggle" id="toggle-loto">
+                🍀 Loto Plus (<span id="count-loto">0</span>) ▼
+            </button>
+            <div id="historial-loto" class="historial-content collapsed">
+                <!-- Sorteos Loto Plus se cargarán aquí -->
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        // ============= TEMA CLARO/OSCURO =============
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            document.getElementById('theme-icon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            
+            // Guardar preferencia
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        // Cargar tema guardado al iniciar
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('theme-icon').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        }
+        
+        // ============= SOLAPAS DESPLEGABLES =============
+        function toggleSolapa(solapaId) {
+            const contenido = document.getElementById(solapaId);
+            const icono = document.getElementById(solapaId + '-icono');
+            if (!contenido || !icono) {
+                console.warn('toggleSolapa: ID no encontrado:', solapaId, 'o', solapaId + '-icono');
+                return false;
+            }
+            // Siempre alterna el estado, pero si no existe, no arroja error
+            contenido.classList.toggle('abierta');
+            icono.classList.toggle('abierta');
+            return true;
+        }
+        
+        // ============= TAB SWITCHING =============
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // ============= QUINI 6 FUNCTIONS =============
+        async function guardarQuini() {
+            const concurso = document.getElementById('quini-concurso').value;
+            const fecha = document.getElementById('quini-fecha').value;
+            const primera = obtenerNumerosQuini('primera');
+            const segunda = obtenerNumerosQuini('segunda');
+            const revancha = obtenerNumerosQuini('revancha');
+            const siempre = obtenerNumerosQuini('siempre');
+            
+            // Log para debug
+            console.log('Datos a enviar:', {
+                concurso,
+                fecha,
+                primera,
+                segunda,
+                revancha,
+                siempre,
+                modoEdicion
+            });
+            
+            if (!concurso || !fecha || primera.length !== 6 || segunda.length !== 6 || revancha.length !== 6 || siempre.length !== 6) {
+                mostrarStatus('quini', 'Completa todos los campos con 6 números cada uno', 'error');
+                return;
+            }
+            
+            try {
+                const datos = {
+                    concurso: parseInt(concurso),
+                    fecha,
+                    primer: primera,
+                    segunda: segunda,
+                    revancha: revancha,
+                    siempre: siempre,
+                    huboGanador: null,
+                    cantidadGanadores: null
+                };
+                
+                let endpoint = '/sorteo';
+                let method = 'POST';
+                let mensaje = `✅ Sorteo ${concurso} guardado correctamente`;
+                
+                // Si estamos en modo edición, usar endpoint de actualización
+                if (modoEdicion && sorteoEditando) {
+                    endpoint = '/sorteo/actualizar';
+                    method = 'PUT';
+                    mensaje = `✅ Sorteo ${concurso} actualizado correctamente`;
+                    // Agregar datos originales para identificar el sorteo a actualizar
+                    datos.concursoOriginal = sorteoEditando.concurso;
+                    datos.fechaOriginal = sorteoEditando.fecha.split('T')[0];
+                }
+                
+                console.log('📤 Enviando datos:', datos);
+                
+                const response = await fetch(endpoint, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+                
+                const result = await response.json();
+                console.log('📥 Respuesta:', result);
+                
+                if (result.success) {
+                    mostrarStatus('quini', mensaje, 'success');
+                    limpiarFormulario('quini');
+                    cancelarEdicion(); // Cancelar modo edición
+                    await cargarHistorialSorteos(); // Actualizar historial inmediatamente
+                    // Actualizar frecuencias y patrones automáticamente
+                    setTimeout(() => {
+                        cargarFrecuenciasQuini();
+                        cargarPatronesQuini();
+                    }, 500);
+                } else {
+                    const mensaje = result.details ? `${result.error}: ${result.details}` : result.error;
+                    mostrarStatus('quini', `❌ Error: ${mensaje}`, 'error');
+                }
+            } catch (error) {
+                mostrarStatus('quini', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function cargarFrecuenciasQuini() {
+            try {
+                const response = await fetch('/frecuencias');
+                const frecuencias = await response.json();
+                
+                // Actualizar la visualización permanente
+                actualizarFrecuenciasPermanentesQuini(frecuencias);
+                
+                mostrarStatus('quini', '📊 Frecuencias actualizadas', 'success');
+            } catch (error) {
+                mostrarStatus('quini', `❌ Error cargando frecuencias: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarFrecuenciasPermanentesQuini(frecuencias) {
+            const container = document.getElementById('quini-frecuencias-permanentes');
+            
+            if (frecuencias.length === 0) {
+                container.innerHTML = '<p>No hay datos de sorteos aún</p>';
+                return;
+            }
+            
+            // Crear grid de números con frecuencias
+            let html = '';
+            frecuencias.forEach((item, index) => {
+                const esTop10 = index < 10;
+                const clase = esTop10 ? 'numero-freq top-10' : 'numero-freq';
+                html += `
+                    <div class="${clase}" title="Número ${item.numero}: ${item.frecuencia} apariciones">
+                        <span class="numero">${item.numero.toString().padStart(2, '0')}</span>
+                        <span class="freq">${item.frecuencia}x</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // ============= FUNCIONES DE PATRONES QUINI 6 =============
+        async function cargarPatronesQuini() {
+            try {
+                const response = await fetch('/patrones-quini');
+                const data = await response.json();
+                
+                actualizarPatronesQuini(data);
+                
+                mostrarStatus('quini', '🔍 Patrones actualizados', 'success');
+            } catch (error) {
+                mostrarStatus('quini', `❌ Error cargando patrones: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarPatronesQuini(data) {
+            const container = document.getElementById('quini-patrones-grid');
+            
+            if (!data.patrones || data.patrones.length === 0) {
+                container.innerHTML = '<p>No hay datos de sorteos aún</p>';
+                return;
+            }
+            
+            // Mostrar TODOS los números (ya vienen ordenados por sorteos sin salir)
+            let html = '';
+            data.patrones.forEach(patron => {
+                const intervalo = patron.intervaloPromedio !== null 
+                    ? `Intervalo: cada ${patron.intervaloPromedio} sorteos` 
+                    : 'Sin patrón aún';
+                
+                const sorteosSinSalir = patron.sorteosSinSalir;
+                const estadoTexto = {
+                    'muy-frio': '❄️❄️',
+                    'frio': '❄️',
+                    'tibio': '🌡️',
+                    'caliente': '🔥'
+                }[patron.estado] || '';
+                
+                html += `
+                    <div class="numero-patron ${patron.estado}" title="${intervalo}">
+                        <div class="numero">${patron.numero.toString().padStart(2, '0')}</div>
+                        <div class="info">
+                            ${patron.frecuencia > 0 ? `Salió ${patron.frecuencia}x` : 'Nunca salió'}<br>
+                            ${intervalo}
+                        </div>
+                        <div class="sorteos-sin-salir">
+                            ${estadoTexto} ${sorteosSinSalir} sorteos
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // ============= LOTO PLUS FUNCTIONS =============
+        async function guardarLoto() {
+            const concurso = document.getElementById('loto-concurso').value;
+            const fecha = document.getElementById('loto-fecha').value;
+            const tradicional = obtenerNumerosLoto('tradicional');
+            const match = obtenerNumerosLoto('match');
+            const desquite = obtenerNumerosLoto('desquite');
+            const saleOSale = obtenerNumerosLoto('sale');
+            const jack = parseInt(document.getElementById('loto-jack').value);
+            
+            if (!concurso || !fecha || tradicional.length !== 6 || match.length !== 6 || 
+                desquite.length !== 6 || saleOSale.length !== 6 || isNaN(jack) || jack < 0 || jack > 9) {
+                mostrarStatus('loto', 'Completa todos los campos: 6 números cada sorteo + Jack (0-9)', 'error');
+                return;
+            }
+            
+            try {
+                const datos = {
+                    concurso: parseInt(concurso),
+                    fecha,
+                    tradicional,
+                    match,
+                    desquite,
+                    saleOSale,
+                    numeroJack: jack,
+                    huboGanador: null,
+                    cantidadGanadores: null
+                };
+                
+                let endpoint = '/loto-plus';
+                let method = 'POST';
+                let mensaje = `✅ Sorteo Loto Plus ${concurso} guardado correctamente`;
+                
+                // Si estamos en modo edición, usar endpoint de actualización
+                if (modoEdicion && sorteoEditando && tipoEditando === 'loto') {
+                    endpoint = '/loto-plus/actualizar';
+                    method = 'PUT';
+                    mensaje = `✅ Sorteo Loto Plus ${concurso} actualizado correctamente`;
+                    // Agregar datos originales para identificar el sorteo a actualizar
+                    datos.concursoOriginal = sorteoEditando.concurso;
+                    datos.fechaOriginal = sorteoEditando.fecha.split('T')[0];
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    mostrarStatus('loto', mensaje, 'success');
+                    limpiarFormulario('loto');
+                    cancelarEdicion(); // Cancelar modo edición
+                    await cargarHistorialSorteos(); // Actualizar historial inmediatamente
+                    // Actualizar frecuencias y patrones automáticamente
+                    setTimeout(() => {
+                        cargarFrecuenciasLoto();
+                        cargarPatronesLoto();
+                    }, 500);
+                } else {
+                    mostrarStatus('loto', `❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                mostrarStatus('loto', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function cargarFrecuenciasLoto() {
+            try {
+                const response = await fetch('/frecuencias-loto-plus');
+                const data = await response.json();
+                
+                // Actualizar la visualización permanente
+                actualizarFrecuenciasPermanentesLoto(data);
+                
+                mostrarStatus('loto', '📊 Frecuencias Loto Plus actualizadas', 'success');
+            } catch (error) {
+                mostrarStatus('loto', `❌ Error cargando frecuencias: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarFrecuenciasPermanentesLoto(data) {
+            const container = document.getElementById('loto-frecuencias-permanentes');
+            
+            if (data.numeros.length === 0) {
+                container.innerHTML = '<p>No hay datos de sorteos Loto Plus aún</p>';
+                return;
+            }
+            
+            // Crear secciones para números y jacks
+            let html = '<div class="loto-section"><h4>Números (0-45)</h4><div class="frecuencias-grid">';
+            
+            data.numeros.forEach((item, index) => {
+                const esTop10 = index < 10;
+                const clase = esTop10 ? 'numero-freq top-10' : 'numero-freq';
+                html += `
+                    <div class="${clase}" title="Número ${item.numero}: ${item.frecuencia} apariciones">
+                        <span class="numero">${item.numero.toString().padStart(2, '0')}</span>
+                        <span class="freq">${item.frecuencia}x</span>
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
+            
+            if (data.jacks.length > 0) {
+                html += '<div class="loto-section"><h4>Jack (0-9)</h4><div class="frecuencias-grid">';
+                data.jacks.forEach((item) => {
+                    html += `
+                        <div class="numero-freq" title="Jack ${item.numero}: ${item.frecuencia} apariciones">
+                            <span class="numero">${item.numero}</span>
+                            <span class="freq">${item.frecuencia}x</span>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // ============= FUNCIONES DE PATRONES LOTO PLUS =============
+        async function cargarPatronesLoto() {
+            try {
+                const response = await fetch('/patrones-loto-plus');
+                const data = await response.json();
+                
+                actualizarPatronesLoto(data);
+                
+                mostrarStatus('loto', '🔍 Patrones Loto Plus actualizados', 'success');
+            } catch (error) {
+                mostrarStatus('loto', `❌ Error cargando patrones: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarPatronesLoto(data) {
+            const containerNumeros = document.getElementById('loto-patrones-grid');
+            const containerJack = document.getElementById('loto-patrones-jack-grid');
+            
+            if (!data.patrones || data.patrones.length === 0) {
+                containerNumeros.innerHTML = '<p>No hay datos de sorteos aún</p>';
+                containerJack.innerHTML = '<p>No hay datos de sorteos aún</p>';
+                return;
+            }
+            
+            // NÚMEROS PRINCIPALES - TODOS (ya vienen ordenados)
+            let htmlNumeros = '';
+            data.patrones.forEach(patron => {
+                const intervalo = patron.intervaloPromedio !== null 
+                    ? `Intervalo: cada ${patron.intervaloPromedio} sorteos` 
+                    : 'Sin patrón aún';
+                
+                const sorteosSinSalir = patron.sorteosSinSalir;
+                const estadoTexto = {
+                    'muy-frio': '❄️❄️',
+                    'frio': '❄️',
+                    'tibio': '🌡️',
+                    'caliente': '🔥'
+                }[patron.estado] || '';
+                
+                htmlNumeros += `
+                    <div class="numero-patron ${patron.estado}" title="${intervalo}">
+                        <div class="numero">${patron.numero.toString().padStart(2, '0')}</div>
+                        <div class="info">
+                            ${patron.frecuencia > 0 ? `Salió ${patron.frecuencia}x` : 'Nunca salió'}<br>
+                            ${intervalo}
+                        </div>
+                        <div class="sorteos-sin-salir">
+                            ${estadoTexto} ${sorteosSinSalir} sorteos
+                        </div>
+                    </div>
+                `;
+            });
+            
+            containerNumeros.innerHTML = htmlNumeros;
+            
+            // NÚMEROS JACK - Todos
+            let htmlJack = '';
+            data.patronesJack.forEach(patron => {
+                const intervalo = patron.intervaloPromedio !== null 
+                    ? `Intervalo: cada ${patron.intervaloPromedio} sorteos` 
+                    : 'Sin patrón aún';
+                
+                const sorteosSinSalir = patron.sorteosSinSalir;
+                const estadoTexto = {
+                    'muy-frio': '❄️❄️',
+                    'frio': '❄️',
+                    'tibio': '🌡️',
+                    'caliente': '🔥'
+                }[patron.estado] || '';
+                
+                htmlJack += `
+                    <div class="numero-patron ${patron.estado}" title="${intervalo}">
+                        <div class="numero">${patron.numero}</div>
+                        <div class="info">
+                            ${patron.frecuencia > 0 ? `Salió ${patron.frecuencia}x` : 'Nunca salió'}<br>
+                            ${intervalo}
+                        </div>
+                        <div class="sorteos-sin-salir">
+                            ${estadoTexto} ${sorteosSinSalir} sorteos
+                        </div>
+                    </div>
+                `;
+            });
+            
+            containerJack.innerHTML = htmlJack;
+        }
+        
+        // ============= PASTE FUNCTIONALITY =============
+        function setupPasteListeners() {
+            // Agregar eventos de paste a todos los contenedores de números
+            document.querySelectorAll('.numeros-grid').forEach(grid => {
+                const grupo = grid.getAttribute('data-grupo');
+                
+                // Hacer el contenedor focusable
+                grid.setAttribute('tabindex', '0');
+                
+                // Evento paste
+                grid.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    distribuirNumeros(pastedText, grupo);
+                });
+                
+                // Eventos visuales
+                grid.addEventListener('focus', () => {
+                    grid.classList.add('paste-ready');
+                });
+                
+                grid.addEventListener('blur', () => {
+                    grid.classList.remove('paste-ready');
+                });
+                
+                // También permitir paste en los inputs individuales
+                for (let i = 1; i <= 6; i++) {
+                    const input = document.getElementById(`${grupo}-${i}`);
+                    if (input) {
+                        input.addEventListener('paste', (e) => {
+                            e.preventDefault();
+                            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                            distribuirNumeros(pastedText, grupo);
+                        });
+                    }
+                }
+            });
+        }
+        
+        function distribuirNumeros(texto, grupo) {
+            // Extraer números del texto pegado
+            const numeros = extraerNumeros(texto);
+            
+            if (numeros.length === 0) {
+                console.log('No se encontraron números válidos en el texto pegado');
+                return;
+            }
+            
+            // Distribuir en los inputs (máximo 6)
+            for (let i = 0; i < Math.min(6, numeros.length); i++) {
+                const input = document.getElementById(`${grupo}-${i + 1}`);
+                if (input && numeros[i] >= 0 && numeros[i] <= 45) {
+                    input.value = numeros[i];
+                }
+            }
+            
+            console.log(`Pegados ${Math.min(6, numeros.length)} números en ${grupo}:`, numeros.slice(0, 6));
+        }
+        
+        function extraerNumeros(texto) {
+            // Buscar números en el texto usando regex
+            const matches = texto.match(/\b\d{1,2}\b/g);
+            if (!matches) return [];
+            
+            // Convertir a números y filtrar rango válido
+            return matches
+                .map(n => parseInt(n))
+                .filter(n => n >= 0 && n <= 45)
+                .slice(0, 6); // Máximo 6 números
+        }
+        
+        // ============= UTILITY FUNCTIONS =============
+        function obtenerNumerosQuini(tipo) {
+            const numeros = [];
+            for (let i = 1; i <= 6; i++) {
+                const valor = parseInt(document.getElementById(`quini-${tipo}-${i}`).value);
+                if (!isNaN(valor) && valor >= 0 && valor <= 45) {
+                    numeros.push(valor);
+                }
+            }
+            return numeros;
+        }
+        
+        function obtenerNumerosLoto(tipo) {
+            const numeros = [];
+            for (let i = 1; i <= 6; i++) {
+                const valor = parseInt(document.getElementById(`loto-${tipo}-${i}`).value);
+                if (!isNaN(valor) && valor >= 0 && valor <= 45) {
+                    numeros.push(valor);
+                }
+            }
+            return numeros;
+        }
+        
+        function parseNumeros(texto) {
+            return texto.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+        }
+        
+        function mostrarStatus(tipo, mensaje, clase) {
+            const statusDiv = document.getElementById(tipo + '-status');
+            statusDiv.textContent = mensaje;
+            statusDiv.className = 'status ' + clase;
+            setTimeout(() => statusDiv.textContent = '', 3000);
+        }
+        
+        function limpiarFormulario(tipo) {
+            if (tipo === 'quini') {
+                document.getElementById('quini-concurso').value = '';
+                document.getElementById('quini-fecha').value = obtenerFechaLocal();
+                const sorteos = ['primera', 'segunda', 'revancha', 'siempre'];
+                sorteos.forEach(sorteo => {
+                    for (let i = 1; i <= 6; i++) {
+                        document.getElementById(`quini-${sorteo}-${i}`).value = '';
+                    }
+                });
+            } else if (tipo === 'loto') {
+                document.getElementById('loto-concurso').value = '';
+                document.getElementById('loto-fecha').value = obtenerFechaLocal();
+                document.getElementById('loto-jack').value = '';
+                const sorteos = ['tradicional', 'match', 'desquite', 'sale'];
+                sorteos.forEach(sorteo => {
+                    for (let i = 1; i <= 6; i++) {
+                        document.getElementById(`loto-${sorteo}-${i}`).value = '';
+                    }
+                });
+            }
+        }
+        
+        // Inicializar fecha de hoy (hora local Argentina)
+        const hoy = obtenerFechaLocal();
+        document.getElementById('quini-fecha').value = hoy;
+        document.getElementById('loto-fecha').value = hoy;
+        
+        // Cargar tema al iniciar
+        loadTheme();
+        
+        // Configurar funcionalidad de pegado
+        setupPasteListeners();
+        
+        // Cargar frecuencias y patrones automáticamente al iniciar (después de un breve delay)
+        setTimeout(() => {
+            cargarFrecuenciasQuini();
+            cargarFrecuenciasLoto();
+            cargarPatronesQuini();
+            cargarPatronesLoto();
+            cargarHistorialSorteos();
+            crearBotonesCancelar(); // Crear botones de cancelar edición
+        }, 1000);
+        
+        // Variables globales para historial
+        let historialQuini = [];
+        let historialLoto = [];
+        
+        // Variables para modo edición
+        let modoEdicion = false;
+        let sorteoEditando = null;
+        let tipoEditando = null;
+        
+        // Función para obtener fecha local en formato YYYY-MM-DD
+        function obtenerFechaLocal() {
+            const ahora = new Date();
+            const year = ahora.getFullYear();
+            const month = String(ahora.getMonth() + 1).padStart(2, '0');
+            const day = String(ahora.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // Función para crear botones de cancelar edición
+        function crearBotonesCancelar() {
+            // Crear botón para Quini 6
+            const botonesQuini = document.querySelector('#quini-tab .button-group') || 
+                                document.querySelector('#quini-tab').querySelector('button').parentNode;
+            if (botonesQuini && !document.getElementById('cancelar-edicion-quini')) {
+                const cancelarQuini = document.createElement('button');
+                cancelarQuini.id = 'cancelar-edicion-quini';
+                cancelarQuini.onclick = cancelarEdicion;
+                cancelarQuini.textContent = '❌ Cancelar Edición';
+                cancelarQuini.style.cssText = 'display: none; background: #dc3545; margin-left: 10px;';
+                botonesQuini.appendChild(cancelarQuini);
+            }
+            
+            // Crear botón para Loto Plus
+            const botonesLoto = document.querySelector('#loto-tab .button-group') || 
+                               document.querySelector('#loto-tab').querySelector('button').parentNode;
+            if (botonesLoto && !document.getElementById('cancelar-edicion-loto')) {
+                const cancelarLoto = document.createElement('button');
+                cancelarLoto.id = 'cancelar-edicion-loto';
+                cancelarLoto.onclick = cancelarEdicion;
+                cancelarLoto.textContent = '❌ Cancelar Edición';
+                cancelarLoto.style.cssText = 'display: none; background: #dc3545; margin-left: 10px;';
+                botonesLoto.appendChild(cancelarLoto);
+            }
+        }
+
+        // ...existing code...
+        
+        // Función para cargar historial de sorteos
+        async function cargarHistorialSorteos() {
+            try {
+                console.log('Cargando historial de sorteos...');
+                
+                // Cargar sorteos de ambos juegos
+                const [responseQuini, responseLoto] = await Promise.all([
+                    fetch('/sorteos'),
+                    fetch('/sorteos-loto-plus')
+                ]);
+                
+                historialQuini = await responseQuini.json();
+                historialLoto = await responseLoto.json();
+                
+                // Ordenar por fecha (más recientes primero)
+                historialQuini.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                historialLoto.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                
+                console.log('Sorteos Quini cargados:', historialQuini.length);
+                console.log('Sorteos Loto cargados:', historialLoto.length);
+                
+                // Actualizar contadores en los botones
+                document.getElementById('count-quini').textContent = historialQuini.length;
+                document.getElementById('count-loto').textContent = historialLoto.length;
+                
+            } catch (error) {
+                console.error('Error cargando historial:', error);
+            }
+        }
+        
+        // Función para mostrar/ocultar historial por juego
+        function toggleHistorial(tipo) {
+            const content = document.getElementById(`historial-${tipo}`);
+            const toggle = document.getElementById(`toggle-${tipo}`);
+            
+            if (content.classList.contains('collapsed')) {
+                // Expandir
+                content.classList.remove('collapsed');
+                toggle.classList.add('expanded');
+                toggle.innerHTML = toggle.innerHTML.replace('▼', '▲');
+                
+                // Cargar contenido
+                const sorteos = tipo === 'quini' ? historialQuini : historialLoto;
+                mostrarHistorialJuego(tipo, sorteos);
+            } else {
+                // Colapsar
+                content.classList.add('collapsed');
+                toggle.classList.remove('expanded');
+                toggle.innerHTML = toggle.innerHTML.replace('▲', '▼');
+            }
+        }
+        
+        // Función para mostrar historial de un juego específico
+        function mostrarHistorialJuego(tipo, sorteos) {
+            const container = document.getElementById(`historial-${tipo}`);
+            
+            if (sorteos.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); padding: 1rem;">No hay sorteos cargados</p>';
+                return;
+            }
+            
+            // DEBUG: Ver qué datos llegan
+            console.log('🔍 Primer sorteo:', sorteos[0]);
+            
+            const html = `
+                <div class="historial-simple">
+                    ${sorteos.map((sorteo, index) => {
+                        const fecha = new Date(sorteo.fecha).toLocaleDateString('es-AR');
+                        const concurso = sorteo.concurso || 'N/A';
+                        const concursoTexto = `Concurso: ${concurso}`;
+                        
+                        return `
+                        <div class="sorteo-expandible" id="sorteo-${tipo}-${index}">
+                            <div class="sorteo-header" onclick="toggleSorteoDetalle('${tipo}', ${index})">
+                                <div class="sorteo-info-principal">
+                                    <div class="sorteo-fecha-concurso">
+                                        <span class="sorteo-fecha">${fecha}</span>
+                                        <span class="sorteo-concurso">${concursoTexto}</span>
+                                    </div>
+                                    <button class="btn-toggle-sorteo" title="Ver números">▼</button>
+                                </div>
+
+                                <div class="sorteo-acciones">
+                                    <button onclick="event.stopPropagation(); editarSorteo('${tipo}', ${index})" class="btn-editar" title="Editar sorteo">
+                                        ✏️
+                                    </button>
+                                    <button onclick="event.stopPropagation(); eliminarSorteo('${tipo}', ${index}, '${concurso}', '${sorteo.fecha}')" class="btn-eliminar" title="Eliminar sorteo">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="sorteo-detalle collapsed" id="detalle-${tipo}-${index}">
+                                ${generarDetalleNumeros(tipo, sorteo, index)}
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        // Función para generar el detalle de números de un sorteo
+        function generarDetalleNumeros(tipo, sorteo, sorteoIndex) {
+            if (!sorteo.numeros || sorteo.numeros.length === 0) {
+                return '<p style="color: var(--text-secondary); padding: 1rem;">No hay números disponibles</p>';
+            }
+            
+            if (tipo === 'quini') {
+                // Para Quini 6: 4 categorías de 6 números cada una
+                const categorias = ['Primera', 'Segunda', 'Revancha', 'Siempre Sale'];
+                const tiposDB = ['primer', 'segunda', 'revancha', 'siempre'];
+                
+                let html = '<div class="numeros-detalle">';
+                
+                for (let i = 0; i < 4; i++) {
+                    const tipoActual = tiposDB[i];
+                    const infoGanador = sorteo.ganadores_por_tipo?.[tipoActual] || {};
+                    const huboGanador = infoGanador.hubo_ganador;
+                    const cantGanadores = infoGanador.cantidad_ganadores || 0;
+                    const trofeoClass = huboGanador ? 'activo' : '';
+                    const trofeoTitle = huboGanador === null || huboGanador === undefined ? 'Clic para marcar si hubo ganador' : 
+                                      huboGanador ? 'Hubo ganador - Clic para cambiar' : 
+                                      'Sin ganador - Clic para cambiar';
+                    
+                    const numerosCat = sorteo.numeros.slice(i * 6, (i + 1) * 6);
+                    html += `
+                        <div class="categoria-numeros">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <h4>${categorias[i]}:</h4>
+                                <span class="trofeo-clickeable ${trofeoClass}" 
+                                      onclick="event.stopPropagation(); toggleGanador('${tipo}', ${sorteoIndex}, '${sorteo.concurso}', '${sorteo.fecha}', '${tipoActual}')"
+                                      title="${trofeoTitle}">
+                                    🏆
+                                </span>
+                                ${huboGanador ? `<span class="cantidad-ganadores" 
+                                      onclick="event.stopPropagation(); editarCantidadGanadores('${tipo}', ${sorteoIndex}, '${sorteo.concurso}', '${sorteo.fecha}', '${tipoActual}')"
+                                      title="Cantidad de ganadores - Clic para editar">
+                                    ${cantGanadores}
+                                </span>` : ''}
+                            </div>
+                            <div class="numeros-linea">
+                                ${numerosCat.map(num => `<span class="numero-sorteo">${num}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                return html;
+            } else {
+                // Para Loto Plus: 4 categorías de 6 números + Jack
+                const categorias = ['Tradicional', 'Match', 'Desquite', 'Sale o Sale'];
+                const tiposDB = ['tradicional', 'match', 'desquite', 'sale_o_sale'];
+                
+                let html = '<div class="numeros-detalle">';
+                
+                for (let i = 0; i < 4; i++) {
+                    const tipoActual = tiposDB[i];
+                    const infoGanador = sorteo.ganadores_por_tipo?.[tipoActual] || {};
+                    const huboGanador = infoGanador.hubo_ganador;
+                    const cantGanadores = infoGanador.cantidad_ganadores || 0;
+                    const trofeoClass = huboGanador ? 'activo' : '';
+                    const trofeoTitle = huboGanador === null || huboGanador === undefined ? 'Clic para marcar si hubo ganador' : 
+                                      huboGanador ? 'Hubo ganador - Clic para cambiar' : 
+                                      'Sin ganador - Clic para cambiar';
+                    
+                    const numerosCat = sorteo.numeros.slice(i * 6, (i + 1) * 6);
+                    html += `
+                        <div class="categoria-numeros">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <h4>${categorias[i]}:</h4>
+                                <span class="trofeo-clickeable ${trofeoClass}" 
+                                      onclick="event.stopPropagation(); toggleGanador('${tipo}', ${sorteoIndex}, '${sorteo.concurso}', '${sorteo.fecha}', '${tipoActual}')"
+                                      title="${trofeoTitle}">
+                                    🏆
+                                </span>
+                                ${huboGanador ? `<span class="cantidad-ganadores" 
+                                      onclick="event.stopPropagation(); editarCantidadGanadores('${tipo}', ${sorteoIndex}, '${sorteo.concurso}', '${sorteo.fecha}', '${tipoActual}')"
+                                      title="Cantidad de ganadores - Clic para editar">
+                                    ${cantGanadores}
+                                </span>` : ''}
+                            </div>
+                            <div class="numeros-linea">
+                                ${numerosCat.map(num => `<span class="numero-sorteo">${num}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Agregar Jack (último número)
+                if (sorteo.numeros.length > 24) {
+                    const jack = sorteo.numeros[sorteo.numeros.length - 1];
+                    const infoGanadorJack = sorteo.ganadores_por_tipo?.['jack'] || {};
+                    const huboGanadorJack = infoGanadorJack.hubo_ganador;
+                    const cantGanadoresJack = infoGanadorJack.cantidad_ganadores || 0;
+                    const trofeoClassJack = huboGanadorJack ? 'activo' : '';
+                    const trofeoTitleJack = huboGanadorJack === null || huboGanadorJack === undefined ? 'Clic para marcar si hubo ganador' : 
+                                          huboGanadorJack ? 'Hubo ganador - Clic para cambiar' : 
+                                          'Sin ganador - Clic para cambiar';
+                    
+                    html += `
+                        <div class="categoria-numeros">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <h4>Jack:</h4>
+                                <span class="trofeo-clickeable ${trofeoClassJack}" 
+                                      onclick="event.stopPropagation(); toggleGanador('${tipo}', ${sorteoIndex}, '${sorteo.concurso}', '${sorteo.fecha}', 'jack')"
+                                      title="${trofeoTitleJack}">
+                                    🏆
+                                </span>
+                                ${huboGanadorJack ? `<span class="cantidad-ganadores" 
+                                      onclick="event.stopPropagation(); editarCantidadGanadores('${tipo}', ${sorteoIndex}, '${sorteo.concurso}', '${sorteo.fecha}', 'jack')"
+                                      title="Cantidad de ganadores - Clic para editar">
+                                    ${cantGanadoresJack}
+                                </span>` : ''}
+                            </div>
+                            <div class="numeros-linea">
+                                <span class="numero-sorteo jack">${jack}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                return html;
+            }
+        }
+        
+        // Función para mostrar/ocultar detalle de un sorteo específico
+        function toggleSorteoDetalle(tipo, index) {
+            const detalle = document.getElementById(`detalle-${tipo}-${index}`);
+            const toggle = document.querySelector(`#sorteo-${tipo}-${index} .btn-toggle-sorteo`);
+            
+            if (detalle.classList.contains('collapsed')) {
+                // Expandir
+                detalle.classList.remove('collapsed');
+                toggle.textContent = '▲';
+                toggle.title = 'Ocultar números';
+            } else {
+                // Colapsar
+                detalle.classList.add('collapsed');
+                toggle.textContent = '▼';
+                toggle.title = 'Ver números';
+            }
+        }
+
+        // ============= FUNCIONES DE APUESTA =============
+        
+        // Función para limpiar apuesta
+        function limpiarApuesta(juego) {
+            if (juego === 'quini') {
+                for (let i = 1; i <= 6; i++) {
+                    const input = document.getElementById(`apuesta-quini-${i}`);
+                    input.value = '';
+                    input.classList.remove('acierto');
+                }
+            } else if (juego === 'loto') {
+                for (let i = 1; i <= 6; i++) {
+                    const input = document.getElementById(`apuesta-loto-${i}`);
+                    input.value = '';
+                    input.classList.remove('acierto');
+                }
+                const jackInput = document.getElementById('apuesta-loto-jack');
+                jackInput.value = '';
+                jackInput.classList.remove('acierto');
+            }
+            
+            // Ocultar solapas de resultados y sugerencias
+            document.getElementById(`solapa-resultados-${juego}`).style.display = 'none';
+            document.getElementById(`solapa-sugerencias-${juego}`).style.display = 'none';
+        }
+        
+        // Función para comparar apuesta con sorteos
+        async function compararApuesta(juego) {
+            try {
+                // Obtener números apostados
+                const numerosApuesta = [];
+                let jackApuesta = null;
+                
+                if (juego === 'quini') {
+                    for (let i = 1; i <= 6; i++) {
+                        const valor = document.getElementById(`apuesta-quini-${i}`).value;
+                        if (valor) numerosApuesta.push(parseInt(valor));
+                    }
+                } else if (juego === 'loto') {
+                    for (let i = 1; i <= 6; i++) {
+                        const valor = document.getElementById(`apuesta-loto-${i}`).value;
+                        if (valor) numerosApuesta.push(parseInt(valor));
+                    }
+                    const jackValor = document.getElementById('apuesta-loto-jack').value;
+                    if (jackValor !== '') jackApuesta = parseInt(jackValor);
+                }
+                
+                // Validar que tenga números
+                if (numerosApuesta.length === 0) {
+                    alert('Por favor ingresa al menos un número para comparar');
+                    return;
+                }
+                
+                // Cargar sorteos
+                const response = await fetch(juego === 'quini' ? '/sorteos' : '/sorteos-loto-plus');
+                const sorteos = await response.json();
+                
+                if (sorteos.length === 0) {
+                    alert('No hay sorteos cargados para comparar');
+                    return;
+                }
+                
+                // Comparar con todos los sorteos
+                const resultados = [];
+                
+                sorteos.forEach(sorteo => {
+                    const numerosSorteo = sorteo.numeros || [];
+                    const jackSorteo = sorteo.jack;
+                    
+                    // Contar aciertos en números
+                    const aciertosNumeros = numerosApuesta.filter(num => 
+                        numerosSorteo.includes(num)
+                    );
+                    
+                    // Verificar jack (solo para Loto Plus)
+                    const aciertoJack = (juego === 'loto' && jackApuesta !== null && jackApuesta === jackSorteo);
+                    
+                    if (aciertosNumeros.length > 0 || aciertoJack) {
+                        resultados.push({
+                            sorteo: sorteo,
+                            aciertosNumeros: aciertosNumeros,
+                            cantidadAciertos: aciertosNumeros.length,
+                            aciertoJack: aciertoJack,
+                            numerosSorteo: numerosSorteo,
+                            jackSorteo: jackSorteo
+                        });
+                    }
+                });
+                
+                // Mostrar resultados
+                mostrarResultadosApuesta(juego, resultados, numerosApuesta, jackApuesta);
+                
+            } catch (error) {
+                console.error('Error comparando apuesta:', error);
+                alert('Error al comparar la apuesta');
+            }
+        }
+        
+        // Función para mostrar resultados de la apuesta
+        function mostrarResultadosApuesta(juego, resultados, numerosApuesta, jackApuesta) {
+            const container = document.getElementById(`resultado-apuesta-${juego}`);
+            const solapa = document.getElementById(`solapa-resultados-${juego}`);
+            
+            // Limpiar clases de acierto anteriores
+            limpiarClasesAcierto(juego);
+            
+            if (resultados.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary);">
+                        <h4>😔 Sin aciertos</h4>
+                        <p>Tus números no coincidieron con ningún sorteo cargado.</p>
+                        <p><strong>Números apostados:</strong> ${numerosApuesta.join(', ')}${jackApuesta !== null ? ` | Jack: ${jackApuesta}` : ''}</p>
+                    </div>
+                `;
+                
+                // Mostrar la solapa y expandirla automáticamente
+                solapa.style.display = 'block';
+                const content = document.getElementById(`content-resultados-${juego}`);
+                const toggle = document.getElementById(`toggle-resultados-${juego}`);
+                
+                if (content.classList.contains('collapsed')) {
+                    content.classList.remove('collapsed');
+                    toggle.classList.add('expanded');
+                    toggle.innerHTML = toggle.innerHTML.replace('▼', '▲');
+                }
+                
+                // Scroll suave hacia los resultados
+                solapa.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                return;
+            }
+            
+            // Resaltar números que tuvieron aciertos
+            resaltarAciertos(juego, resultados);
+            
+            // Calcular estadísticas
+            const mejorResultado = Math.max(...resultados.map(r => r.cantidadAciertos + (r.aciertoJack ? 1 : 0)));
+            const totalAciertos = resultados.reduce((sum, r) => sum + r.cantidadAciertos, 0);
+            const sorteosConAciertos = resultados.length;
+            
+            let html = `
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <h4 style="color: var(--accent-color);">🎉 ¡Encontramos aciertos!</h4>
+                </div>
+                
+                <div class="estadisticas-aciertos">
+                    <div class="stat-card ${mejorResultado >= 4 ? 'mejor-resultado' : ''}">
+                        <span class="stat-number">${mejorResultado}</span>
+                        <span class="stat-label">Mejor resultado</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${sorteosConAciertos}</span>
+                        <span class="stat-label">Sorteos con aciertos</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${totalAciertos}</span>
+                        <span class="stat-label">Total aciertos</span>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1rem;">
+                    <h5>📋 Detalle de aciertos:</h5>
+                    <div style="max-height: 300px; overflow-y: auto;">
+            `;
+            
+            // Ordenar por cantidad de aciertos (mayor a menor)
+            resultados.sort((a, b) => {
+                const totalA = a.cantidadAciertos + (a.aciertoJack ? 1 : 0);
+                const totalB = b.cantidadAciertos + (b.aciertoJack ? 1 : 0);
+                return totalB - totalA;
+            });
+            
+            resultados.forEach(resultado => {
+                const fecha = new Date(resultado.sorteo.fecha).toLocaleDateString('es-AR');
+                const totalAciertosItem = resultado.cantidadAciertos + (resultado.aciertoJack ? 1 : 0);
+                
+                html += `
+                    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bg-tertiary);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong>${fecha}</strong>
+                            <span style="background: var(--accent-color); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem;">
+                                ${totalAciertosItem} acierto${totalAciertosItem !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        <div style="font-family: monospace; margin-bottom: 0.5rem;">
+                            <strong>Sorteo:</strong> ${resultado.numerosSorteo.join(', ')}${resultado.jackSorteo !== undefined ? ` | Jack: ${resultado.jackSorteo}` : ''}
+                        </div>
+                        <div style="color: var(--accent-color); font-weight: bold;">
+                            <strong>Aciertos:</strong> ${resultado.aciertosNumeros.join(', ')}${resultado.aciertoJack ? ` | Jack: ✓` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
+            
+            container.innerHTML = html;
+            
+            // Mostrar la solapa y expandirla automáticamente
+            solapa.style.display = 'block';
+            const content = document.getElementById(`content-resultados-${juego}`);
+            const toggle = document.getElementById(`toggle-resultados-${juego}`);
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                toggle.classList.add('expanded');
+                toggle.innerHTML = toggle.innerHTML.replace('▼', '▲');
+            }
+            
+            // Scroll suave hacia los resultados
+            solapa.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        // Función para limpiar clases de acierto
+        function limpiarClasesAcierto(juego) {
+            if (juego === 'quini') {
+                for (let i = 1; i <= 6; i++) {
+                    document.getElementById(`apuesta-quini-${i}`).classList.remove('acierto');
+                }
+            } else if (juego === 'loto') {
+                for (let i = 1; i <= 6; i++) {
+                    document.getElementById(`apuesta-loto-${i}`).classList.remove('acierto');
+                }
+                document.getElementById('apuesta-loto-jack').classList.remove('acierto');
+            }
+        }
+        
+        // Función para resaltar números con aciertos
+        function resaltarAciertos(juego, resultados) {
+            const numerosConAciertos = new Set();
+            let jackConAcierto = false;
+            
+            // Recopilar todos los números que tuvieron aciertos
+            resultados.forEach(resultado => {
+                resultado.aciertosNumeros.forEach(num => numerosConAciertos.add(num));
+                if (resultado.aciertoJack) jackConAcierto = true;
+            });
+            
+            // Resaltar inputs
+            if (juego === 'quini') {
+                for (let i = 1; i <= 6; i++) {
+                    const input = document.getElementById(`apuesta-quini-${i}`);
+                    const valor = parseInt(input.value);
+                    if (numerosConAciertos.has(valor)) {
+                        input.classList.add('acierto');
+                    }
+                }
+            } else if (juego === 'loto') {
+                for (let i = 1; i <= 6; i++) {
+                    const input = document.getElementById(`apuesta-loto-${i}`);
+                    const valor = parseInt(input.value);
+                    if (numerosConAciertos.has(valor)) {
+                        input.classList.add('acierto');
+                    }
+                }
+                
+                if (jackConAcierto) {
+                    document.getElementById('apuesta-loto-jack').classList.add('acierto');
+                }
+            }
+        }
+
+        // ============= FUNCIONES DE EDICIÓN DE SORTEOS =============
+        
+        // Función para editar un sorteo
+        async function editarSorteo(tipo, sorteoIndex) {
+            try {
+                // Obtener datos del sorteo específico usando el índice
+                const sorteos = tipo === 'quini' ? historialQuini : historialLoto;
+                
+                const sorteo = sorteos[sorteoIndex];
+                if (!sorteo) {
+                    alert('No se pudo encontrar el sorteo para editar');
+                    return;
+                }
+                
+                // Activar modo edición
+                modoEdicion = true;
+                sorteoEditando = sorteo;
+                tipoEditando = tipo;
+                
+                // Cambiar texto del botón
+                const boton = document.querySelector(`#${tipo}-tab button`);
+                if (boton) {
+                    boton.textContent = `⚡ Actualizar Sorteo ${sorteo.concurso}`;
+                    boton.style.backgroundColor = '#ff9800';
+                }
+                
+                // Mostrar botón de cancelar
+                const cancelarBtn = document.getElementById(`cancelar-edicion-${tipo}`);
+                if (cancelarBtn) {
+                    cancelarBtn.style.display = 'inline-block';
+                }
+                
+                // Cambiar a la pestaña correspondiente
+                switchTab(tipo);
+                
+                // Cargar datos en los campos de entrada
+                if (tipo === 'quini') {
+                    cargarDatosSorteoQuini(sorteo);
+                } else {
+                    cargarDatosSorteoLoto(sorteo);
+                }
+                
+                // Mostrar mensaje de confirmación
+                mostrarMensajeEdicion(tipo, sorteo);
+                
+                // Scroll hacia arriba para ver los campos
+                document.getElementById(`${tipo}-tab`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+            } catch (error) {
+                console.error('Error al cargar sorteo para editar:', error);
+                alert('Error al cargar el sorteo para edición');
+            }
+        }
+        
+        // Función para cargar datos en los campos de Quini 6
+        function cargarDatosSorteoQuini(sorteo) {
+            // Cargar concurso y fecha
+            document.getElementById('quini-concurso').value = sorteo.concurso || '';
+            document.getElementById('quini-fecha').value = sorteo.fecha ? sorteo.fecha.split('T')[0] : '';
+            
+            // Cargar números por categoría
+            const numeros = sorteo.numeros || [];
+            const categorias = ['primera', 'segunda', 'revancha', 'siempre'];
+            
+            // Limpiar todos los campos primero
+            categorias.forEach(categoria => {
+                for (let i = 1; i <= 6; i++) {
+                    document.getElementById(`quini-${categoria}-${i}`).value = '';
+                }
+            });
+            
+            // Cargar números si están disponibles
+            if (numeros.length >= 24) { // 4 categorías x 6 números
+                categorias.forEach((categoria, catIndex) => {
+                    for (let i = 1; i <= 6; i++) {
+                        const numeroIndex = catIndex * 6 + (i - 1);
+                        if (numeros[numeroIndex] !== undefined) {
+                            document.getElementById(`quini-${categoria}-${i}`).value = numeros[numeroIndex];
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Función para cargar datos en los campos de Loto Plus
+        function cargarDatosSorteoLoto(sorteo) {
+            // Cargar concurso y fecha
+            document.getElementById('loto-concurso').value = sorteo.concurso || '';
+            document.getElementById('loto-fecha').value = sorteo.fecha ? sorteo.fecha.split('T')[0] : '';
+            
+            // Cargar números por categoría
+            const numeros = sorteo.numeros || [];
+            const categorias = ['tradicional', 'match', 'desquite', 'sale'];
+            
+            // Limpiar todos los campos primero
+            categorias.forEach(categoria => {
+                for (let i = 1; i <= 6; i++) {
+                    document.getElementById(`loto-${categoria}-${i}`).value = '';
+                }
+            });
+            
+            // Limpiar jack
+            document.getElementById('loto-jack').value = '';
+            
+            // Cargar números si están disponibles
+            if (numeros.length >= 24) { // 4 categorías x 6 números
+                categorias.forEach((categoria, catIndex) => {
+                    for (let i = 1; i <= 6; i++) {
+                        const numeroIndex = catIndex * 6 + (i - 1);
+                        if (numeros[numeroIndex] !== undefined) {
+                            document.getElementById(`loto-${categoria}-${i}`).value = numeros[numeroIndex];
+                        }
+                    }
+                });
+            }
+            
+            // Cargar jack
+            if (sorteo.jack !== undefined) {
+                document.getElementById('loto-jack').value = sorteo.jack;
+            }
+        }
+        
+        // Función para cancelar edición
+        function cancelarEdicion() {
+            modoEdicion = false;
+            sorteoEditando = null;
+            tipoEditando = null;
+            
+            // Restaurar botones
+            document.querySelectorAll('#quini-tab button, #loto-tab button').forEach(boton => {
+                if (boton.textContent.includes('Actualizar')) {
+                    boton.textContent = boton.textContent.includes('Quini') ? '💾 Guardar Sorteo' : '💾 Guardar Sorteo';
+                    boton.style.backgroundColor = '';
+                }
+            });
+            
+            // Ocultar botones de cancelar
+            const cancelarQuini = document.getElementById('cancelar-edicion-quini');
+            const cancelarLoto = document.getElementById('cancelar-edicion-loto');
+            if (cancelarQuini) cancelarQuini.style.display = 'none';
+            if (cancelarLoto) cancelarLoto.style.display = 'none';
+            
+            // Limpiar formularios
+            limpiarFormulario('quini');
+            limpiarFormulario('loto');
+        }
+        
+        // Función para mostrar mensaje de edición
+        function mostrarMensajeEdicion(tipo, sorteo) {
+            const fecha = new Date(sorteo.fecha).toLocaleDateString('es-AR');
+            const juego = tipo === 'quini' ? 'Quini 6' : 'Loto Plus';
+            
+            const mensaje = document.createElement('div');
+            mensaje.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #17a2b8, #138496);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 10000;
+                max-width: 300px;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            mensaje.innerHTML = `
+                <div>📝 Editando ${juego}</div>
+                <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    Fecha: ${fecha}<br>
+                    Concurso: ${sorteo.concurso || 'N/A'}
+                </div>
+                <div style="font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.9;">
+                    Modifica los campos y guarda los cambios
+                </div>
+            `;
+            document.body.appendChild(mensaje);
+            
+            setTimeout(() => {
+                mensaje.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => document.body.removeChild(mensaje), 300);
+            }, 4000);
+        }
+        
+        // Función para eliminar un sorteo
+        async function eliminarSorteo(tipo, sorteoIndex, concurso, fecha) {
+            const juego = tipo === 'quini' ? 'Quini 6' : 'Loto Plus';
+            const fechaFormateada = new Date(fecha).toLocaleDateString('es-AR');
+            
+            if (!confirm(`¿Estás seguro de que quieres eliminar este sorteo de ${juego}?\n\nConcurso: ${concurso}\nFecha: ${fechaFormateada}\n\nEsta acción no se puede deshacer.`)) {
+                return;
+            }
+            
+            try {
+                // Obtener el sorteo del array local
+                const sorteos = tipo === 'quini' ? historialQuini : historialLoto;
+                const sorteo = sorteos[sorteoIndex];
+                
+                if (!sorteo) {
+                    alert('No se pudo encontrar el sorteo para eliminar');
+                    return;
+                }
+                
+                // Usar los parámetros recibidos por la función, no los del objeto sorteo
+                const concursoFinal = concurso !== 'N/A' ? concurso : (sorteo.concurso || null);
+                
+                console.log('🗑️ Eliminando sorteo:', { tipo, concurso: concursoFinal, fecha: sorteo.fecha });
+                
+                const response = await fetch(`/${tipo === 'quini' ? 'sorteo' : 'loto-plus'}/eliminar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        concurso: concursoFinal,
+                        fecha: sorteo.fecha
+                    })
+                });
+                
+                console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Resultado:', result);
+                    
+                    // Recargar historial
+                    await cargarHistorialSorteos();
+                    
+                    // Mostrar mensaje de confirmación
+                    const mensaje = document.createElement('div');
+                    mensaje.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: linear-gradient(135deg, #28a745, #20c997);
+                        color: white;
+                        padding: 1rem 1.5rem;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        z-index: 10000;
+                        animation: slideInRight 0.3s ease-out;
+                    `;
+                    mensaje.textContent = `✅ Sorteo de ${juego} eliminado correctamente`;
+                    document.body.appendChild(mensaje);
+                    
+                    setTimeout(() => {
+                        mensaje.style.animation = 'slideOutRight 0.3s ease-out';
+                        setTimeout(() => document.body.removeChild(mensaje), 300);
+                    }, 3000);
+                    
+                } else {
+                    const errorResponse = await response.json();
+                    console.error('❌ Error del servidor:', errorResponse);
+                    throw new Error(`Error ${response.status}: ${errorResponse.error || 'Error al eliminar sorteo'}`);
+                }
+                
+            } catch (error) {
+                console.error('Error eliminando sorteo:', error);
+                alert(`Error al eliminar el sorteo de ${juego}`);
+            }
+        }
+
+        // ============= FUNCIONES PARA GANADORES =============
+        
+        async function toggleGanador(tipo, sorteoIndex, concurso, fecha, tipoSorteo) {
+            try {
+                const sorteos = tipo === 'quini' ? historialQuini : historialLoto;
+                const sorteo = sorteos[sorteoIndex];
+                
+                if (!sorteo) {
+                    alert('No se pudo encontrar el sorteo');
+                    return;
+                }
+                
+                // Obtener info actual de ese tipo específico
+                const infoActual = sorteo.ganadores_por_tipo?.[tipoSorteo] || {};
+                const estadoActual = infoActual.hubo_ganador;
+                const cantActual = infoActual.cantidad_ganadores;
+                
+                // Ciclar entre: null -> true -> false -> null
+                let nuevoEstado;
+                let cantidadGanadores = cantActual;
+                
+                if (estadoActual === null || estadoActual === undefined) {
+                    nuevoEstado = true; // Sin info -> Sí
+                    
+                    // Preguntar cantidad de ganadores cuando se activa
+                    const cantidad = prompt('¿Cuántos ganadores hubo?', cantidadGanadores || '1');
+                    if (cantidad === null) return; // Usuario canceló
+                    
+                    cantidadGanadores = cantidad ? parseInt(cantidad) : null;
+                    
+                } else if (estadoActual === true) {
+                    nuevoEstado = false; // Sí -> No
+                    cantidadGanadores = null; // No hay ganadores
+                } else {
+                    nuevoEstado = null; // No -> Sin info
+                    cantidadGanadores = null;
+                }
+                
+                // Actualizar en el servidor
+                const response = await fetch(`/${tipo === 'quini' ? 'sorteo' : 'loto-plus'}/actualizar-ganador`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        concurso: concurso !== 'N/A' ? concurso : sorteo.concurso,
+                        fecha: sorteo.fecha,
+                        tipo: tipoSorteo,
+                        huboGanador: nuevoEstado === null ? null : (nuevoEstado ? 'si' : 'no'),
+                        cantidadGanadores: cantidadGanadores
+                    })
+                });
+                
+                if (response.ok) {
+                    // Actualizar localmente solo para ese tipo
+                    if (!sorteo.ganadores_por_tipo) sorteo.ganadores_por_tipo = {};
+                    sorteo.ganadores_por_tipo[tipoSorteo] = {
+                        hubo_ganador: nuevoEstado,
+                        cantidad_ganadores: cantidadGanadores
+                    };
+                    
+                    // Recargar historial para reflejar cambios visuales
+                    await cargarHistorialSorteos();
+                    
+                    // Reabrir el historial actual
+                    const content = document.getElementById(`historial-${tipo}`);
+                    if (!content.classList.contains('collapsed')) {
+                        mostrarHistorialJuego(tipo, sorteos);
+                    }
+                } else {
+                    throw new Error('Error actualizando estado del ganador');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al actualizar información de ganador');
+            }
+        }
+        
+        async function editarCantidadGanadores(tipo, sorteoIndex, concurso, fecha, tipoSorteo) {
+            try {
+                const sorteos = tipo === 'quini' ? historialQuini : historialLoto;
+                const sorteo = sorteos[sorteoIndex];
+                
+                if (!sorteo) {
+                    alert('No se pudo encontrar el sorteo');
+                    return;
+                }
+                
+                const infoActual = sorteo.ganadores_por_tipo?.[tipoSorteo] || {};
+                const cantidadActual = infoActual.cantidad_ganadores || 0;
+                const nuevaCantidad = prompt(`¿Cuántos ganadores hubo en ${tipoSorteo}?\n\nCantidad actual: ${cantidadActual}`, cantidadActual);
+                
+                if (nuevaCantidad === null) return; // Usuario canceló
+                
+                const cant = parseInt(nuevaCantidad);
+                if (isNaN(cant) || cant < 0) {
+                    alert('Por favor ingresa un número válido (0 o mayor)');
+                    return;
+                }
+                
+                // Actualizar en el servidor
+                const response = await fetch(`/${tipo === 'quini' ? 'sorteo' : 'loto-plus'}/actualizar-ganador`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        concurso: concurso !== 'N/A' ? concurso : sorteo.concurso,
+                        fecha: sorteo.fecha,
+                        tipo: tipoSorteo,
+                        huboGanador: infoActual.hubo_ganador === null ? null : (infoActual.hubo_ganador ? 'si' : 'no'),
+                        cantidadGanadores: cant
+                    })
+                });
+                
+                if (response.ok) {
+                    // Actualizar localmente
+                    if (!sorteo.ganadores_por_tipo) sorteo.ganadores_por_tipo = {};
+                    if (!sorteo.ganadores_por_tipo[tipoSorteo]) sorteo.ganadores_por_tipo[tipoSorteo] = {};
+                    sorteo.ganadores_por_tipo[tipoSorteo].cantidad_ganadores = cant;
+                    
+                    // Si hay ganadores, marcar el trofeo como activo
+                    if (cant > 0 && !sorteo.hubo_ganador) {
+                        sorteo.hubo_ganador = true;
+                    }
+                    
+                    // Recargar historial
+                    await cargarHistorialSorteos();
+                    
+                    // Reabrir el historial actual
+                    const content = document.getElementById(`historial-${tipo}`);
+                    if (!content.classList.contains('collapsed')) {
+                        mostrarHistorialJuego(tipo, sorteos);
+                    }
+                } else {
+                    throw new Error('Error actualizando cantidad de ganadores');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al actualizar cantidad de ganadores');
+            }
+        }
+
+        // ============= GENERADOR DE APUESTAS INTELIGENTES =============
+        
+        // Función principal para generar apuestas inteligentes
+        async function generarApuestasInteligentes(juego) {
+            try {
+                // Obtener frecuencias
+                const response = await fetch(juego === 'quini' ? '/frecuencias' : '/frecuencias-loto-plus');
+                
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Para Quini 6: data es directamente el array de frecuencias
+                // Para Loto Plus: data es {numeros, jacks}, necesitamos solo los números
+                const frecuencias = juego === 'quini' ? data : data.numeros;
+                
+                if (!frecuencias || frecuencias.length === 0) {
+                    alert(`No hay datos suficientes para generar sugerencias de ${juego === 'quini' ? 'Quini 6' : 'Loto Plus'}.\n\nPrimero carga algunos sorteos de ${juego === 'quini' ? 'Quini 6' : 'Loto Plus'} para poder generar sugerencias estadísticas.`);
+                    return;
+                }
+                
+                // Generar 5 estrategias diferentes
+                const sugerencias = [];
+                
+                if (juego === 'quini') {
+                    sugerencias.push(generarApuestaFrecuentes(frecuencias, 6, 'Más Frecuentes'));
+                    sugerencias.push(generarApuestaMixta(frecuencias, 6, 'Mixta Equilibrada'));
+                    sugerencias.push(generarApuestaAleatoriaPonderada(frecuencias, 6, 'Semi-Aleatoria'));
+                    sugerencias.push(generarApuestaRangos(frecuencias, 6, 'Por Rangos'));
+                    sugerencias.push(generarApuestaContrarian(frecuencias, 6, 'Contrarian'));
+                } else {
+                    sugerencias.push(generarApuestaFrecuentes(frecuencias, 6, 'Más Frecuentes'));
+                    sugerencias.push(generarApuestaMixta(frecuencias, 6, 'Mixta Equilibrada'));
+                    sugerencias.push(generarApuestaAleatoriaPonderada(frecuencias, 6, 'Semi-Aleatoria'));
+                    sugerencias.push(generarApuestaRangos(frecuencias, 6, 'Por Rangos'));
+                    sugerencias.push(generarApuestaContrarian(frecuencias, 6, 'Contrarian'));
+                }
+                
+                // Agregar jacks para Loto Plus
+                if (juego === 'loto') {
+                    const jacksData = data.jacks || [];
+                    sugerencias.forEach((sugerencia, index) => {
+                        if (jacksData.length > 0) {
+                            // Usar diferentes estrategias para el jack
+                            switch (index) {
+                                case 0: // Más frecuente
+                                    sugerencia.jack = jacksData[0]?.numero || Math.floor(Math.random() * 10);
+                                    break;
+                                case 1: // Segundo más frecuente
+                                    sugerencia.jack = jacksData[1]?.numero || Math.floor(Math.random() * 10);
+                                    break;
+                                case 2: // Aleatorio ponderado
+                                    const totalJackFrecuencia = jacksData.reduce((sum, j) => sum + j.frecuencia, 0);
+                                    let randomJack = Math.random() * totalJackFrecuencia;
+                                    for (let jack of jacksData) {
+                                        randomJack -= jack.frecuencia;
+                                        if (randomJack <= 0) {
+                                            sugerencia.jack = jack.numero;
+                                            break;
+                                        }
+                                    }
+                                    if (sugerencia.jack === undefined) sugerencia.jack = Math.floor(Math.random() * 10);
+                                    break;
+                                case 3: // Rango medio
+                                    const jackMedio = jacksData[Math.floor(jacksData.length / 2)]?.numero || Math.floor(Math.random() * 10);
+                                    sugerencia.jack = jackMedio;
+                                    break;
+                                case 4: // Menos frecuente
+                                    sugerencia.jack = jacksData[jacksData.length - 1]?.numero || Math.floor(Math.random() * 10);
+                                    break;
+                                default:
+                                    sugerencia.jack = Math.floor(Math.random() * 10);
+                            }
+                        } else {
+                            sugerencia.jack = Math.floor(Math.random() * 10);
+                        }
+                    });
+                }
+                
+                mostrarSugerencias(juego, sugerencias);
+                
+            } catch (error) {
+                console.error('Error generando sugerencias:', error);
+                
+                if (error.message.includes('404')) {
+                    alert(`❌ No se pudieron obtener las frecuencias de ${juego === 'quini' ? 'Quini 6' : 'Loto Plus'}.\n\n🔧 Solución: Primero carga algunos sorteos de ${juego === 'quini' ? 'Quini 6' : 'Loto Plus'} y luego haz clic en "Actualizar Frecuencias".`);
+                } else if (error.message.includes('Failed to fetch')) {
+                    alert('❌ Error de conexión con el servidor.\n\n🔧 Verifica que el servidor esté funcionando.');
+                } else {
+                    alert(`❌ Error al generar sugerencias de ${juego === 'quini' ? 'Quini 6' : 'Loto Plus'}:\n\n${error.message}`);
+                }
+            }
+        }
+        
+        // ============= GENERAR APUESTAS POR PATRONES =============
+        async function generarApuestasPorPatrones(juego) {
+            try {
+                // Obtener patrones
+                const response = await fetch(juego === 'quini' ? '/patrones-quini' : '/patrones-loto-plus');
+                
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                const patrones = data.patrones;
+                
+                if (!patrones || patrones.length === 0) {
+                    alert(`No hay datos suficientes para generar sugerencias por patrones de ${juego === 'quini' ? 'Quini 6' : 'Loto Plus'}.\n\nPrimero carga algunos sorteos.`);
+                    return;
+                }
+                
+                // Generar 5 estrategias basadas en PATRONES
+                const sugerencias = [];
+                
+                // Estrategia 1: Top números MUY FRÍOS (los que más deben salir)
+                const muyFrios = patrones.filter(p => p.estado === 'muy-frio').slice(0, 15);
+                if (muyFrios.length >= 6) {
+                    sugerencias.push({
+                        numeros: muyFrios.slice(0, 6).map(p => p.numero).sort((a, b) => a - b),
+                        estrategia: '❄️❄️ Muy Fríos Extremos',
+                        descripcion: 'Números que MÁS tiempo llevan sin salir según su patrón',
+                        confianza: 'Alta',
+                        temperatura: 'muy-frio'
+                    });
+                }
+                
+                // Estrategia 2: Mixta Fríos (muy fríos + fríos)
+                const frios = patrones.filter(p => p.estado === 'frio' || p.estado === 'muy-frio').slice(0, 20);
+                if (frios.length >= 6) {
+                    const seleccion = [];
+                    // 4 muy fríos
+                    const mf = frios.filter(p => p.estado === 'muy-frio').slice(0, 4);
+                    seleccion.push(...mf.map(p => p.numero));
+                    // 2 fríos
+                    const f = frios.filter(p => p.estado === 'frio').slice(0, 2);
+                    seleccion.push(...f.map(p => p.numero));
+                    
+                    while (seleccion.length < 6 && frios.length > seleccion.length) {
+                        const siguiente = frios[seleccion.length];
+                        if (!seleccion.includes(siguiente.numero)) {
+                            seleccion.push(siguiente.numero);
+                        }
+                    }
+                    
+                    sugerencias.push({
+                        numeros: seleccion.slice(0, 6).sort((a, b) => a - b),
+                        estrategia: '❄️ Mixta Fríos',
+                        descripcion: 'Combinación de números muy fríos y fríos',
+                        confianza: 'Alta',
+                        temperatura: 'frio'
+                    });
+                }
+                
+                // Estrategia 3: Equilibrada (fríos + tibios)
+                const equilibrados = patrones.filter(p => 
+                    p.estado === 'muy-frio' || p.estado === 'frio' || p.estado === 'tibio'
+                ).slice(0, 25);
+                
+                if (equilibrados.length >= 6) {
+                    const seleccion = [];
+                    // 3 muy fríos/fríos
+                    const mf = equilibrados.filter(p => p.estado === 'muy-frio' || p.estado === 'frio').slice(0, 3);
+                    seleccion.push(...mf.map(p => p.numero));
+                    // 3 tibios
+                    const t = equilibrados.filter(p => p.estado === 'tibio').slice(0, 3);
+                    seleccion.push(...t.map(p => p.numero));
+                    
+                    while (seleccion.length < 6 && equilibrados.length > seleccion.length) {
+                        const siguiente = equilibrados[seleccion.length];
+                        if (!seleccion.includes(siguiente.numero)) {
+                            seleccion.push(siguiente.numero);
+                        }
+                    }
+                    
+                    sugerencias.push({
+                        numeros: seleccion.slice(0, 6).sort((a, b) => a - b),
+                        estrategia: '🌡️ Equilibrada',
+                        descripcion: 'Balance entre números fríos y tibios',
+                        confianza: 'Media-Alta',
+                        temperatura: 'tibio'
+                    });
+                }
+                
+                // Estrategia 4: Selectiva (los 6 con mayor "deuda" según patrón)
+                const porDeuda = [...patrones].sort((a, b) => {
+                    const deudaA = a.intervaloPromedio ? (a.sorteosSinSalir / a.intervaloPromedio) : 0;
+                    const deudaB = b.intervaloPromedio ? (b.sorteosSinSalir / b.intervaloPromedio) : 0;
+                    return deudaB - deudaA;
+                }).slice(0, 6);
+                
+                sugerencias.push({
+                    numeros: porDeuda.map(p => p.numero).sort((a, b) => a - b),
+                    estrategia: '🎯 Mayor Deuda',
+                    descripcion: 'Números con mayor "deuda" según su intervalo histórico',
+                    confianza: 'Muy Alta',
+                    temperatura: 'muy-frio'
+                });
+                
+                // Estrategia 5: Diversificada (un poco de todo)
+                const diversa = [];
+                // 2 muy fríos
+                const div_mf = patrones.filter(p => p.estado === 'muy-frio').slice(0, 2);
+                diversa.push(...div_mf.map(p => p.numero));
+                // 2 fríos
+                const div_f = patrones.filter(p => p.estado === 'frio').slice(0, 2);
+                diversa.push(...div_f.map(p => p.numero));
+                // 1 tibio
+                const div_t = patrones.filter(p => p.estado === 'tibio').slice(0, 1);
+                diversa.push(...div_t.map(p => p.numero));
+                // 1 caliente
+                const div_c = patrones.filter(p => p.estado === 'caliente').slice(0, 1);
+                diversa.push(...div_c.map(p => p.numero));
+                
+                while (diversa.length < 6) {
+                    const random = patrones[Math.floor(Math.random() * Math.min(30, patrones.length))];
+                    if (!diversa.includes(random.numero)) {
+                        diversa.push(random.numero);
+                    }
+                }
+                
+                sugerencias.push({
+                    numeros: diversa.slice(0, 6).sort((a, b) => a - b),
+                    estrategia: '🎲 Diversificada',
+                    descripcion: 'Mezcla de todos los estados de temperatura',
+                    confianza: 'Media',
+                    temperatura: 'mixto'
+                });
+                
+                // Agregar jacks para Loto Plus basados en patrones
+                if (juego === 'loto' && data.patronesJack) {
+                    const patronesJack = data.patronesJack;
+                    sugerencias.forEach((sugerencia, index) => {
+                        if (patronesJack.length > 0) {
+                            switch (index) {
+                                case 0: // Más frío
+                                    const mfj = patronesJack.filter(p => p.estado === 'muy-frio' || p.estado === 'frio')[0];
+                                    sugerencia.jack = mfj?.numero || Math.floor(Math.random() * 10);
+                                    break;
+                                case 1: // Segundo más frío
+                                    const mfj2 = patronesJack.filter(p => p.estado === 'muy-frio' || p.estado === 'frio')[1];
+                                    sugerencia.jack = mfj2?.numero || Math.floor(Math.random() * 10);
+                                    break;
+                                case 2: // Tibio
+                                    const tj = patronesJack.filter(p => p.estado === 'tibio')[0];
+                                    sugerencia.jack = tj?.numero || Math.floor(Math.random() * 10);
+                                    break;
+                                case 3: // Mayor deuda
+                                    const deudaJ = [...patronesJack].sort((a, b) => {
+                                        const dA = a.intervaloPromedio ? (a.sorteosSinSalir / a.intervaloPromedio) : 0;
+                                        const dB = b.intervaloPromedio ? (b.sorteosSinSalir / b.intervaloPromedio) : 0;
+                                        return dB - dA;
+                                    })[0];
+                                    sugerencia.jack = deudaJ?.numero || Math.floor(Math.random() * 10);
+                                    break;
+                                case 4: // Aleatorio
+                                    sugerencia.jack = patronesJack[Math.floor(Math.random() * patronesJack.length)]?.numero || Math.floor(Math.random() * 10);
+                                    break;
+                            }
+                        }
+                    });
+                }
+                
+                mostrarSugerencias(juego, sugerencias);
+                
+            } catch (error) {
+                console.error('Error generando sugerencias por patrones:', error);
+                alert(`❌ Error al generar sugerencias por patrones:\n\n${error.message}`);
+            }
+        }
+        
+        // Estrategia 1: Números más frecuentes
+        function generarApuestaFrecuentes(frecuencias, cantidad, estrategia) {
+            const numerosFrecuentes = frecuencias
+                .sort((a, b) => b.frecuencia - a.frecuencia)
+                .slice(0, cantidad)
+                .map(f => f.numero);
+            
+            return {
+                numeros: numerosFrecuentes.sort((a, b) => a - b),
+                estrategia: estrategia,
+                descripcion: `Los ${cantidad} números que más han salido históricamente`,
+                confianza: 'Alta'
+            };
+        }
+        
+        // Estrategia 2: Mixta equilibrada (50% frecuentes, 50% medios)
+        function generarApuestaMixta(frecuencias, cantidad, estrategia) {
+            const ordenados = frecuencias.sort((a, b) => b.frecuencia - a.frecuencia);
+            const frecuentes = ordenados.slice(0, Math.ceil(cantidad / 2));
+            const medios = ordenados.slice(Math.ceil(ordenados.length / 3), Math.ceil(ordenados.length * 2 / 3));
+            
+            const numerosFrecuentes = frecuentes.map(f => f.numero);
+            const numerosMedios = medios
+                .sort(() => 0.5 - Math.random())
+                .slice(0, cantidad - numerosFrecuentes.length)
+                .map(f => f.numero);
+            
+            return {
+                numeros: [...numerosFrecuentes, ...numerosMedios].sort((a, b) => a - b),
+                estrategia: estrategia,
+                descripcion: 'Combina números frecuentes con números de aparición media',
+                confianza: 'Media-Alta'
+            };
+        }
+        
+        // Estrategia 3: Semi-aleatoria ponderada
+        function generarApuestaAleatoriaPonderada(frecuencias, cantidad, estrategia) {
+            const numeros = [];
+            const frecuenciasDisponibles = [...frecuencias];
+            
+            while (numeros.length < cantidad && frecuenciasDisponibles.length > 0) {
+                // Probabilidad ponderada por frecuencia
+                const totalFrecuencia = frecuenciasDisponibles.reduce((sum, f) => sum + f.frecuencia, 0);
+                let random = Math.random() * totalFrecuencia;
+                
+                for (let i = 0; i < frecuenciasDisponibles.length; i++) {
+                    random -= frecuenciasDisponibles[i].frecuencia;
+                    if (random <= 0) {
+                        numeros.push(frecuenciasDisponibles[i].numero);
+                        frecuenciasDisponibles.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+            
+            return {
+                numeros: numeros.sort((a, b) => a - b),
+                estrategia: estrategia,
+                descripcion: 'Selección aleatoria ponderada por frecuencia histórica',
+                confianza: 'Media'
+            };
+        }
+        
+        // Estrategia 4: Por rangos (distribución equilibrada)
+        function generarApuestaRangos(frecuencias, cantidad, estrategia) {
+            const rangos = [
+                { min: 0, max: 9, cantidad: Math.ceil(cantidad / 5) },
+                { min: 10, max: 19, cantidad: Math.ceil(cantidad / 5) },
+                { min: 20, max: 29, cantidad: Math.ceil(cantidad / 5) },
+                { min: 30, max: 39, cantidad: Math.ceil(cantidad / 5) },
+                { min: 40, max: 45, cantidad: cantidad - Math.ceil(cantidad / 5) * 4 }
+            ];
+            
+            const numeros = [];
+            
+            rangos.forEach(rango => {
+                const numerosRango = frecuencias
+                    .filter(f => f.numero >= rango.min && f.numero <= rango.max)
+                    .sort((a, b) => b.frecuencia - a.frecuencia)
+                    .slice(0, rango.cantidad)
+                    .map(f => f.numero);
+                
+                numeros.push(...numerosRango);
+            });
+            
+            // Completar si falta
+            while (numeros.length < cantidad) {
+                const faltantes = frecuencias
+                    .filter(f => !numeros.includes(f.numero))
+                    .sort((a, b) => b.frecuencia - a.frecuencia);
+                
+                if (faltantes.length > 0) {
+                    numeros.push(faltantes[0].numero);
+                }
+            }
+            
+            return {
+                numeros: numeros.slice(0, cantidad).sort((a, b) => a - b),
+                estrategia: estrategia,
+                descripcion: 'Distribución equilibrada por rangos numéricos',
+                confianza: 'Media'
+            };
+        }
+        
+        // Estrategia 5: Contrarian (números menos frecuentes)
+        function generarApuestaContrarian(frecuencias, cantidad, estrategia) {
+            const numerosMenosFrecuentes = frecuencias
+                .sort((a, b) => a.frecuencia - b.frecuencia)
+                .slice(0, cantidad)
+                .map(f => f.numero);
+            
+            return {
+                numeros: numerosMenosFrecuentes.sort((a, b) => a - b),
+                estrategia: estrategia,
+                descripcion: 'Números que menos han salido (estrategia contrarian)',
+                confianza: 'Baja-Media'
+            };
+        }
+        
+        // Función para mostrar las sugerencias
+        function mostrarSugerencias(juego, sugerencias) {
+            const container = document.getElementById(`sugerencias-${juego}`);
+            const solapa = document.getElementById(`solapa-sugerencias-${juego}`);
+            
+            let html = `
+                <div class="sugerencias-header">
+                    🧠 Sugerencias Inteligentes basadas en Análisis Estadístico
+                </div>
+                <div class="sugerencias-grid">
+            `;
+            
+            sugerencias.forEach((sugerencia, index) => {
+                const numerosTexto = sugerencia.numeros.join(' - ');
+                const jackTexto = sugerencia.jack !== undefined ? ` | Jack: ${sugerencia.jack}` : '';
+                
+                html += `
+                    <div class="sugerencia-item">
+                        <div class="sugerencia-header-item">
+                            <span class="sugerencia-titulo">Sugerencia ${index + 1}</span>
+                            <span class="sugerencia-estrategia">${sugerencia.estrategia}</span>
+                        </div>
+                        
+                        <div class="sugerencia-numeros">
+                            ${numerosTexto}${jackTexto}
+                        </div>
+                        
+                        <div class="sugerencia-info">
+                            <strong>Estrategia:</strong> ${sugerencia.descripcion}<br>
+                            <strong>Confianza:</strong> ${sugerencia.confianza}
+                        </div>
+                        
+                        <button class="btn-usar-sugerencia" onclick="usarSugerencia('${juego}', [${sugerencia.numeros.join(',')}]${sugerencia.jack !== undefined ? `, ${sugerencia.jack}` : ''})">
+                            ✨ Usar esta apuesta
+                        </button>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            container.innerHTML = html;
+            
+            // Mostrar la solapa y expandirla automáticamente
+            solapa.style.display = 'block';
+            const content = document.getElementById(`content-sugerencias-${juego}`);
+            const toggle = document.getElementById(`toggle-sugerencias-${juego}`);
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                toggle.classList.add('expanded');
+                toggle.innerHTML = toggle.innerHTML.replace('▼', '▲');
+            }
+            
+            // Scroll suave hacia las sugerencias
+            solapa.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        // Función para usar una sugerencia
+        function usarSugerencia(juego, numeros, jack = null) {
+            if (juego === 'quini') {
+                // Limpiar inputs actuales
+                limpiarApuesta('quini');
+                
+                // Llenar con la sugerencia
+                numeros.forEach((numero, index) => {
+                    if (index < 6) {
+                        document.getElementById(`apuesta-quini-${index + 1}`).value = numero;
+                    }
+                });
+            } else if (juego === 'loto') {
+                // Limpiar inputs actuales
+                limpiarApuesta('loto');
+                
+                // Llenar números
+                numeros.forEach((numero, index) => {
+                    if (index < 6) {
+                        document.getElementById(`apuesta-loto-${index + 1}`).value = numero;
+                    }
+                });
+                
+                // Llenar jack si existe
+                if (jack !== null) {
+                    document.getElementById('apuesta-loto-jack').value = jack;
+                }
+            }
+            
+            // Colapsar solapa de sugerencias
+            const content = document.getElementById(`content-sugerencias-${juego}`);
+            const toggle = document.getElementById(`toggle-sugerencias-${juego}`);
+            
+            content.classList.add('collapsed');
+            toggle.classList.remove('expanded');
+            toggle.innerHTML = toggle.innerHTML.replace('▲', '▼');
+            
+            // Mostrar mensaje de confirmación
+            const mensaje = document.createElement('div');
+            mensaje.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 10000;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            mensaje.textContent = '✅ Apuesta aplicada exitosamente';
+            document.body.appendChild(mensaje);
+            
+            setTimeout(() => {
+                mensaje.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => document.body.removeChild(mensaje), 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

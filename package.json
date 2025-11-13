@@ -1,7 +1,7 @@
 {
   "name": "apostando",
   "version": "0.1.0",
-  "description": "Sistema de seguimiento y estadísticas para sorteos de Quini 6 y Brinco",
+  "description": "Sistema de seguimiento y estadísticas para sorteos de Quini 6 y Loto Plus",
   "main": "main.js",
   "private": true,
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "keywords": [
     "quini6",
-    "brinco",
+    "loto-plus",
     "sorteos",
     "estadisticas",
     "mysql"

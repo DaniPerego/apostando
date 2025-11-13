@@ -1,8 +1,6 @@
-const { app, BrowserWindow, Menu } = require('electron');
+﻿const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 
-// Variable para mantener referencia del servidor
-let server = null;
 let mainWindow = null;
 
 // Función para iniciar el servidor backend
@@ -10,9 +8,8 @@ async function startServer() {
   console.log('🚀 Iniciando servidor backend...');
   
   try {
-    // Importar y ejecutar el servidor directamente
-    const { startServer: serverStart } = require('./server.js');
-    await serverStart();
+    // Importar y ejecutar el servidor simple directamente
+    require('./server.js');
     console.log('✅ Servidor backend iniciado directamente');
   } catch (error) {
     console.error('❌ Error iniciando servidor:', error);
@@ -28,7 +25,6 @@ function createWindow() {
     height: 900,
     minWidth: 1000,
     minHeight: 700,
-    icon: path.join(__dirname, 'assets', 'icon.png'), // Agregaremos el icono después
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -45,14 +41,14 @@ function createWindow() {
       label: 'Aplicación',
       submenu: [
         {
-          label: 'Acerca de Apostando',
+          label: 'Acerca de Apostando Desktop',
           click: () => {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'Acerca de Apostando',
-              message: 'Sistema de Análisis de Sorteos',
-              detail: 'Análisis estadístico de Quini 6, Brinco y Loto Plus\nVersión 1.0.0\n\nDesarrollado con Node.js + Electron'
+              title: 'Acerca de Apostando Desktop',
+              message: 'Sistema de Análisis de Sorteos - Desktop',
+              detail: 'Análisis estadístico de Quini 6 y Loto Plus\nVersión Desktop 1.0.0\n\nDesarrollado con Node.js + Electron'
             });
           }
         },
@@ -79,13 +75,6 @@ function createWindow() {
         { type: 'separator' },
         { role: 'togglefullscreen', label: 'Pantalla Completa' }
       ]
-    },
-    {
-      label: 'Ventana',
-      submenu: [
-        { role: 'minimize', label: 'Minimizar' },
-        { role: 'close', label: 'Cerrar' }
-      ]
     }
   ];
 
@@ -93,7 +82,7 @@ function createWindow() {
   Menu.setApplicationMenu(menu);
 
   // Cargar la aplicación
-  mainWindow.loadURL('http://localhost:3000');
+  mainWindow.loadURL('http://localhost:3001');
 
   // Mostrar ventana cuando esté lista
   mainWindow.once('ready-to-show', () => {
@@ -105,18 +94,12 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
-  // Manejar links externos
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    require('electron').shell.openExternal(url);
-    return { action: 'deny' };
-  });
 }
 
 // Este método se ejecuta cuando Electron ha terminado de inicializarse
 app.whenReady().then(async () => {
   try {
-    console.log('🚀 Iniciando aplicación Apostando...');
+    console.log('🚀 Iniciando Apostando Desktop...');
     
     // Iniciar servidor backend
     await startServer();
@@ -127,50 +110,23 @@ app.whenReady().then(async () => {
     // Crear ventana principal
     createWindow();
     
-    console.log('✅ Aplicación lista!');
+    console.log('✅ Aplicación Desktop lista!');
     
   } catch (error) {
     console.error('❌ Error iniciando aplicación:', error);
-    
-    const { dialog } = require('electron');
-    dialog.showErrorBox('Error de Inicio', 
-      'No se pudo iniciar el servidor backend.\n\n' +
-      'Asegúrate de que MySQL/MariaDB esté ejecutándose.\n\n' +
-      'Error: ' + error.message
-    );
-    
     app.quit();
   }
 });
 
 // Salir cuando todas las ventanas estén cerradas
 app.on('window-all-closed', () => {
-  // En macOS es común que las aplicaciones permanezcan activas
-  // hasta que el usuario las cierre explícitamente con Cmd + Q
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('activate', () => {
-  // En macOS es común recrear una ventana cuando el icono del dock es clickeado
-  // y no hay otras ventanas abiertas
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
-});
-
-// Limpiar al cerrar la aplicación
-app.on('before-quit', () => {
-  console.log('🛑 Cerrando aplicación...');
-  // El servidor se cerrará automáticamente cuando termine el proceso de Electron
-});
-
-// Manejar errores no capturados
-process.on('uncaughtException', (error) => {
-  console.error('Error no capturado:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Promesa rechazada sin manejar:', reason);
 });

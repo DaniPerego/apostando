@@ -198,14 +198,14 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Fecha debe estar en formato YYYY-MM-DD' });
         }
 
-        // Validar números
-        validateNumbers(primerSorteo, 0, 45, 6);
-        validateNumbers(segundaDelQuini, 0, 45, 6);
-        validateNumbers(revancha, 0, 45, 6);
-        validateNumbers(siempreSale, 0, 45, 6);
+        // Validar números (1-45 como indica el HTML)
+        validateNumbers(primerSorteo, 1, 45, 6);
+        validateNumbers(segundaDelQuini, 1, 45, 6);
+        validateNumbers(revancha, 1, 45, 6);
+        validateNumbers(siempreSale, 1, 45, 6);
         
         if (premioExtra && premioExtra.length > 0) {
-            validatePremioExtra(premioExtra, 0, 45, 18);
+            validatePremioExtra(premioExtra, 1, 45, 18);
         }
 
         // Verificar si ya existe el sorteo
@@ -288,11 +288,12 @@ router.get('/frequencies', async (req, res) => {
             ORDER BY cantidad DESC, numero ASC
         `);
 
-        // Crear array con todos los números (0-45) y sus frecuencias
-        const result = Array.from({ length: 46 }, (_, i) => {
-            const found = frequencies.find(f => f.numero === i);
+        // Crear array con todos los números (1-45) y sus frecuencias
+        const result = Array.from({ length: 45 }, (_, i) => {
+            const numero = i + 1; // Números del 1 al 45
+            const found = frequencies.find(f => f.numero === numero);
             return {
-                numero: i,
+                numero: numero,
                 cantidad: found ? found.cantidad : 0
             };
         });
