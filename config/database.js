@@ -28,7 +28,7 @@ async function testConnection() {
         return true;
     } catch (error) {
         console.error('❌ Error de conexión a MySQL:', error.message);
-        
+
         if (error.code === 'ECONNREFUSED') {
             console.error('💡 Sugerencia: Verifica que MySQL esté ejecutándose en el puerto', dbConfig.port);
         } else if (error.code === 'ER_BAD_DB_ERROR') {
@@ -36,7 +36,7 @@ async function testConnection() {
         } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
             console.error('💡 Sugerencia: Verifica usuario y contraseña en el archivo .env');
         }
-        
+
         return false;
     }
 }
@@ -45,7 +45,7 @@ async function testConnection() {
 async function initializeTables() {
     try {
         const connection = await pool.getConnection();
-        
+
         // Crear tablas Quini 6
         await connection.execute(`
             CREATE TABLE IF NOT EXISTS quini_sorteos (
