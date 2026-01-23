@@ -1,0 +1,10 @@
+# Ignorar dependencias y carpetas generadas
+node_modules/
+client/
+dist/
+build/
+release/
+*.log
+.env
+*.backup
+*.tmp
