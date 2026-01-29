@@ -54,8 +54,8 @@ app.post('/sorteo', async (req, res) => {
             return res.status(400).json({ error: errores.join(', ') });
         }
         
-        // Premio Extra automático (18 números únicos)
-        const premioExtra = [...primer, ...segunda, ...revancha].sort((a, b) => a - b);
+        // Premio Extra automático (números únicos de Primera, Segunda y Revancha)
+        const premioExtra = [...new Set([...primer, ...segunda, ...revancha])].sort((a, b) => a - b);
         
         // Convertir huboGanador a boolean o NULL
         let huboGanadorBool = null;
@@ -127,6 +127,14 @@ app.get('/sorteos', async (req, res) => {
                 [sorteo.id]
             );
             
+            // Obtener Premio Extra (18 números únicos)
+            const [premioExtra] = await db.execute(
+                `SELECT numero FROM quini_numeros 
+                 WHERE sorteo_id = ? AND tipo = 'premio_extra'
+                 ORDER BY numero`,
+                [sorteo.id]
+            );
+            
             // Agrupar por tipo
             const ganadoresPorTipo = {};
             numeros.forEach(n => {
@@ -142,6 +150,7 @@ app.get('/sorteos', async (req, res) => {
                 ...sorteo,
                 concurso: sorteo.id,
                 numeros: numeros.map(n => n.numero),
+                premioExtra: premioExtra.map(n => n.numero),
                 ganadores_por_tipo: ganadoresPorTipo
             };
         }));
@@ -164,7 +173,11 @@ app.get('/frecuencias', async (req, res) => {
             ORDER BY frecuencia DESC, numero ASC
         `);
         
-        res.json(result);
+        // Contar total de sorteos
+        const [sorteos] = await db.execute('SELECT COUNT(*) as total FROM quini_sorteos');
+        const totalSorteos = sorteos[0].total;
+        
+        res.json({ frecuencias: result, totalSorteos });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Error calculando frecuencias' });
@@ -238,7 +251,11 @@ app.get('/frecuencias-loto-plus', async (req, res) => {
             ORDER BY frecuencia DESC, numero ASC
         `);
         
-        res.json({ numeros, jacks });
+        // Contar total de sorteos
+        const [sorteos] = await db.execute('SELECT COUNT(*) as total FROM loto_plus_sorteos');
+        const totalSorteos = sorteos[0].total;
+        
+        res.json({ numeros, jacks, totalSorteos });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Error calculando frecuencias Loto Plus' });
@@ -866,6 +883,10 @@ async function start() {
                 segunda.forEach(n => numeros.push([concurso, 'segunda', n]));
                 revancha.forEach(n => numeros.push([concurso, 'revancha', n]));
                 siempre.forEach(n => numeros.push([concurso, 'siempre', n]));
+                
+                // Premio Extra (números únicos de Primera, Segunda y Revancha)
+                const premioExtra = [...new Set([...primer, ...segunda, ...revancha])].sort((a, b) => a - b);
+                premioExtra.forEach(n => numeros.push([concurso, 'premio_extra', n]));
                 
                 await db.execute(
                     'INSERT INTO quini_numeros (sorteo_id, tipo, numero) VALUES ' + 

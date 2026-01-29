@@ -1176,7 +1176,7 @@
             
             <!-- FRECUENCIAS PERMANENTES -->
             <div class="solapa-header" onclick="toggleSolapa('quini-frecuencias-solapa')">
-                <h3>📊 Números más frecuentes (Quini 6)</h3>
+                <h3>📊 Números más frecuentes <span id="quini-frecuencias-titulo">(Quini 6)</span></h3>
                 <span class="solapa-icono" id="quini-frecuencias-solapa-icono">▼</span>
             </div>
             <div class="solapa-contenido" id="quini-frecuencias-solapa">
@@ -1189,7 +1189,7 @@
             
             <!-- ANÁLISIS DE PATRONES QUINI 6 -->
             <div class="solapa-header" onclick="toggleSolapa('quini-patrones-solapa')">
-                <h3>🔍 Análisis de Patrones Temporales (Quini 6)</h3>
+                <h3>🔍 Análisis de Patrones Temporales <span id="quini-patrones-titulo">(Quini 6)</span></h3>
                 <span class="solapa-icono" id="quini-patrones-solapa-icono">▼</span>
             </div>
             <div class="solapa-contenido" id="quini-patrones-solapa">
@@ -1226,7 +1226,7 @@
             
             <!-- ANÁLISIS DE PERIODICIDAD QUINI 6 -->
             <div class="solapa-header" onclick="toggleSolapa('quini-periodicidad-solapa')">
-                <h3>📊 Análisis de Periodicidad (Quini 6)</h3>
+                <h3>📊 Análisis de Periodicidad <span id="quini-periodicidad-titulo">(Quini 6)</span></h3>
                 <span class="solapa-icono" id="quini-periodicidad-solapa-icono">▼</span>
             </div>
             <div class="solapa-contenido collapsed" id="quini-periodicidad-solapa">
@@ -1263,7 +1263,7 @@
             
             <!-- PREDICCIÓN INTELIGENTE QUINI 6 -->
             <div class="solapa-header" onclick="toggleSolapa('quini-prediccion-solapa')">
-                <h3>🔮 Predicción Inteligente (Quini 6)</h3>
+                <h3>🔮 Predicción Inteligente <span id="quini-prediccion-titulo">(Quini 6)</span></h3>
                 <span class="solapa-icono" id="quini-prediccion-solapa-icono">▼</span>
             </div>
             <div class="solapa-contenido collapsed" id="quini-prediccion-solapa">
@@ -1402,7 +1402,7 @@
             
             <!-- FRECUENCIAS PERMANENTES LOTO PLUS -->
             <div class="solapa-header" onclick="toggleSolapa('loto-frecuencias-solapa')">
-                <h3>📊 Números más frecuentes (Loto Plus)</h3>
+                <h3>📊 Números más frecuentes <span id="loto-frecuencias-titulo">(Loto Plus)</span></h3>
                 <span class="solapa-icono" id="loto-frecuencias-solapa-icono">▼</span>
             </div>
             <div class="solapa-contenido" id="loto-frecuencias-solapa">
@@ -1415,7 +1415,7 @@
             
             <!-- ANÁLISIS DE PATRONES LOTO PLUS -->
             <div class="solapa-header" onclick="toggleSolapa('loto-patrones-solapa')">
-                <h3>🔍 Análisis de Patrones Temporales (Loto Plus)</h3>
+                <h3>🔍 Análisis de Patrones Temporales <span id="loto-patrones-titulo">(Loto Plus)</span></h3>
                 <span class="solapa-icono" id="loto-patrones-solapa-icono">▼</span>
             </div>
             <div class="solapa-contenido" id="loto-patrones-solapa">
@@ -1462,7 +1462,7 @@
             
             <!-- ANÁLISIS DE PERIODICIDAD LOTO PLUS -->
             <div class="solapa-header" onclick="toggleSolapa('loto-periodicidad-solapa')">
-                <h3>📊 Análisis de Periodicidad (Loto Plus)</h3>
+                <h3>📊 Análisis de Periodicidad <span id="loto-periodicidad-titulo">(Loto Plus)</span></h3>
                 <span class="solapa-icono" id="loto-periodicidad-solapa-icono">▼</span>
             </div>
             <div class="solapa-contenido collapsed" id="loto-periodicidad-solapa">
@@ -1509,7 +1509,7 @@
             
             <!-- PREDICCIÓN INTELIGENTE LOTO PLUS -->
             <div class="solapa-header" onclick="toggleSolapa('loto-prediccion-solapa')">
-                <h3>🔮 Predicción Inteligente (Loto Plus)</h3>
+                <h3>🔮 Predicción Inteligente <span id="loto-prediccion-titulo">(Loto Plus)</span></h3>
                 <span class="solapa-icono" id="loto-prediccion-solapa-icono">▼</span>
             </div>
             <div class="solapa-contenido collapsed" id="loto-prediccion-solapa">
@@ -1757,10 +1757,16 @@
         async function cargarFrecuenciasQuini() {
             try {
                 const response = await fetch('/frecuencias');
-                const frecuencias = await response.json();
+                const data = await response.json();
+                
+                // Actualizar título con cantidad de sorteos
+                const titulo = document.getElementById('quini-frecuencias-titulo');
+                if (titulo && data.totalSorteos !== undefined) {
+                    titulo.textContent = `(${data.totalSorteos} sorteos)`;
+                }
                 
                 // Actualizar la visualización permanente
-                actualizarFrecuenciasPermanentesQuini(frecuencias);
+                actualizarFrecuenciasPermanentesQuini(data.frecuencias || data);
                 
                 mostrarStatus('quini', '📊 Frecuencias actualizadas', 'success');
             } catch (error) {
@@ -1797,6 +1803,12 @@
             try {
                 const response = await fetch('/patrones-quini');
                 const data = await response.json();
+                
+                // Actualizar título con cantidad de sorteos
+                const titulo = document.getElementById('quini-patrones-titulo');
+                if (titulo && data.totalSorteos) {
+                    titulo.textContent = `(${data.totalSorteos} sorteos)`;
+                }
                 
                 actualizarPatronesQuini(data);
                 
@@ -1919,6 +1931,12 @@
                 const response = await fetch('/frecuencias-loto-plus');
                 const data = await response.json();
                 
+                // Actualizar título con cantidad de sorteos
+                const titulo = document.getElementById('loto-frecuencias-titulo');
+                if (titulo && data.totalSorteos !== undefined) {
+                    titulo.textContent = `(${data.totalSorteos} sorteos)`;
+                }
+                
                 // Actualizar la visualización permanente
                 actualizarFrecuenciasPermanentesLoto(data);
                 
@@ -1973,6 +1991,12 @@
             try {
                 const response = await fetch('/patrones-loto-plus');
                 const data = await response.json();
+                
+                // Actualizar título con cantidad de sorteos
+                const titulo = document.getElementById('loto-patrones-titulo');
+                if (titulo && data.totalSorteos) {
+                    titulo.textContent = `(${data.totalSorteos} sorteos)`;
+                }
                 
                 actualizarPatronesLoto(data);
                 
@@ -2061,6 +2085,12 @@
                 const response = await fetch('/periodicidad-quini');
                 const data = await response.json();
                 
+                // Actualizar título con cantidad de sorteos
+                const titulo = document.getElementById('quini-periodicidad-titulo');
+                if (titulo && data.totalSorteos) {
+                    titulo.textContent = `(${data.totalSorteos} sorteos)`;
+                }
+                
                 actualizarPeriodicidadQuini(data);
                 
                 mostrarStatus('quini', '📊 Periodicidad actualizada', 'success');
@@ -2127,6 +2157,12 @@
             try {
                 const response = await fetch('/periodicidad-loto-plus');
                 const data = await response.json();
+                
+                // Actualizar título con cantidad de sorteos
+                const titulo = document.getElementById('loto-periodicidad-titulo');
+                if (titulo && data.totalSorteos) {
+                    titulo.textContent = `(${data.totalSorteos} sorteos)`;
+                }
                 
                 actualizarPeriodicidadLoto(data);
                 
@@ -2239,6 +2275,12 @@
                 const response = await fetch('/prediccion-quini');
                 const data = await response.json();
                 
+                // Actualizar título con cantidad de sorteos
+                const titulo = document.getElementById('quini-prediccion-titulo');
+                if (titulo && data.totalSorteos) {
+                    titulo.textContent = `(${data.totalSorteos} sorteos)`;
+                }
+                
                 actualizarPrediccionQuini(data);
                 
                 mostrarStatus('quini', '🔮 Predicción generada', 'success');
@@ -2296,6 +2338,12 @@
             try {
                 const response = await fetch('/prediccion-loto-plus');
                 const data = await response.json();
+                
+                // Actualizar título con cantidad de sorteos
+                const titulo = document.getElementById('loto-prediccion-titulo');
+                if (titulo && data.totalSorteos) {
+                    titulo.textContent = `(${data.totalSorteos} sorteos)`;
+                }
                 
                 actualizarPrediccionLoto(data);
                 
@@ -2719,6 +2767,21 @@
                     `;
                 }
                 
+                // Agregar Premio Extra (18 números únicos: Primera + Segunda + Revancha)
+                if (sorteo.premioExtra && sorteo.premioExtra.length === 18) {
+                    html += `
+                        <div class="categoria-numeros" style="background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%); border: 2px solid #f5576c; margin-top: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <h4 style="color: #f5576c;">🏆 Premio Extra (18):</h4>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">Primera + Segunda + Revancha</span>
+                            </div>
+                            <div class="numeros-linea" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(35px, 1fr)); gap: 0.25rem;">
+                                ${sorteo.premioExtra.map(num => `<span class="numero-sorteo" style="border-color: #f5576c;">${num}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 html += '</div>';
                 return html;
             } else {
@@ -2884,6 +2947,7 @@
                 
                 sorteos.forEach(sorteo => {
                     const numerosSorteo = sorteo.numeros || [];
+                    const premioExtra = sorteo.premioExtra || [];
                     const jackSorteo = sorteo.jack;
                     
                     // Contar aciertos en números
@@ -2891,16 +2955,28 @@
                         numerosSorteo.includes(num)
                     );
                     
+                    // Verificar aciertos en Premio Extra (Quini 6)
+                    let aciertoPremioExtra = false;
+                    if (juego === 'quini' && premioExtra.length === 18) {
+                        // Verificar si los 6 números apostados están en los 18 del premio extra
+                        const aciertosEnPremioExtra = numerosApuesta.filter(num => 
+                            premioExtra.includes(num)
+                        );
+                        aciertoPremioExtra = (aciertosEnPremioExtra.length === 6 && numerosApuesta.length === 6);
+                    }
+                    
                     // Verificar jack (solo para Loto Plus)
                     const aciertoJack = (juego === 'loto' && jackApuesta !== null && jackApuesta === jackSorteo);
                     
-                    if (aciertosNumeros.length > 0 || aciertoJack) {
+                    if (aciertosNumeros.length > 0 || aciertoJack || aciertoPremioExtra) {
                         resultados.push({
                             sorteo: sorteo,
                             aciertosNumeros: aciertosNumeros,
                             cantidadAciertos: aciertosNumeros.length,
                             aciertoJack: aciertoJack,
+                            aciertoPremioExtra: aciertoPremioExtra,
                             numerosSorteo: numerosSorteo,
+                            premioExtra: premioExtra,
                             jackSorteo: jackSorteo
                         });
                     }
@@ -2952,6 +3028,7 @@
             resaltarAciertos(juego, resultados);
             
             // Calcular estadísticas
+            const premiosExtra = resultados.filter(r => r.aciertoPremioExtra).length;
             const mejorResultado = Math.max(...resultados.map(r => r.cantidadAciertos + (r.aciertoJack ? 1 : 0)));
             const totalAciertos = resultados.reduce((sum, r) => sum + r.cantidadAciertos, 0);
             const sorteosConAciertos = resultados.length;
@@ -2959,6 +3036,7 @@
             let html = `
                 <div style="text-align: center; margin-bottom: 1rem;">
                     <h4 style="color: var(--accent-color);">🎉 ¡Encontramos aciertos!</h4>
+                    ${premiosExtra > 0 ? `<p style="color: #f5576c; font-weight: bold; font-size: 1.2rem;">🏆 ${premiosExtra} Premio${premiosExtra > 1 ? 's' : ''} Extra acertado${premiosExtra > 1 ? 's' : ''}!</p>` : ''}
                 </div>
                 
                 <div class="estadisticas-aciertos">
@@ -2974,6 +3052,12 @@
                         <span class="stat-number">${totalAciertos}</span>
                         <span class="stat-label">Total aciertos</span>
                     </div>
+                    ${premiosExtra > 0 ? `
+                    <div class="stat-card" style="background: linear-gradient(135deg, rgba(240, 147, 251, 0.2) 0%, rgba(245, 87, 108, 0.2) 100%); border-color: #f5576c;">
+                        <span class="stat-number" style="color: #f5576c;">🏆 ${premiosExtra}</span>
+                        <span class="stat-label">Premio${premiosExtra > 1 ? 's' : ''} Extra</span>
+                    </div>
+                    ` : ''}
                 </div>
                 
                 <div style="margin-top: 1rem;">
@@ -2992,17 +3076,34 @@
                 const fecha = new Date(resultado.sorteo.fecha).toLocaleDateString('es-AR');
                 const totalAciertosItem = resultado.cantidadAciertos + (resultado.aciertoJack ? 1 : 0);
                 
+                // Badge especial para Premio Extra
+                const badgePremioExtra = resultado.aciertoPremioExtra 
+                    ? '<span style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; margin-left: 0.5rem;">🏆 PREMIO EXTRA</span>'
+                    : '';
+                
                 html += `
-                    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: var(--bg-tertiary);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div style="border: 1px solid ${resultado.aciertoPremioExtra ? '#f5576c' : 'var(--border-color)'}; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: ${resultado.aciertoPremioExtra ? 'linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%)' : 'var(--bg-tertiary)'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
                             <strong>${fecha}</strong>
-                            <span style="background: var(--accent-color); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem;">
-                                ${totalAciertosItem} acierto${totalAciertosItem !== 1 ? 's' : ''}
-                            </span>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <span style="background: var(--accent-color); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem;">
+                                    ${totalAciertosItem} acierto${totalAciertosItem !== 1 ? 's' : ''}
+                                </span>
+                                ${badgePremioExtra}
+                            </div>
                         </div>
                         <div style="font-family: monospace; margin-bottom: 0.5rem;">
                             <strong>Sorteo:</strong> ${resultado.numerosSorteo.join(', ')}${resultado.jackSorteo !== undefined ? ` | Jack: ${resultado.jackSorteo}` : ''}
                         </div>
+                        ${resultado.aciertoPremioExtra ? `
+                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight: bold; text-align: center;">
+                            🎊 ¡6 NÚMEROS EN PREMIO EXTRA! 🎊<br>
+                            <span style="font-size: 0.85rem;">Tus 6 números están en los 18 del Premio Extra</span>
+                        </div>
+                        <div style="font-family: monospace; font-size: 0.85rem; margin-bottom: 0.5rem;">
+                            <strong>Premio Extra (18):</strong> ${resultado.premioExtra.join(', ')}
+                        </div>
+                        ` : ''}
                         <div style="color: var(--accent-color); font-weight: bold;">
                             <strong>Aciertos:</strong> ${resultado.aciertosNumeros.join(', ')}${resultado.aciertoJack ? ` | Jack: ✓` : ''}
                         </div>
