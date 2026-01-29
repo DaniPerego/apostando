@@ -1223,6 +1223,61 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- ANÁLISIS DE PERIODICIDAD QUINI 6 -->
+            <div class="solapa-header" onclick="toggleSolapa('quini-periodicidad-solapa')">
+                <h3>📊 Análisis de Periodicidad (Quini 6)</h3>
+                <span class="solapa-icono" id="quini-periodicidad-solapa-icono">▼</span>
+            </div>
+            <div class="solapa-contenido collapsed" id="quini-periodicidad-solapa">
+                <div class="card-patrones">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0;">
+                        <strong>Cada cuántos sorteos</strong> sale cada número y <strong>probabilidad</strong> de salir en el próximo sorteo
+                    </p>
+                    <button onclick="cargarPeriodicidadQuini()" style="margin: 0.5rem 0;">🔄 Actualizar Periodicidad</button>
+                    
+                    <div class="patron-legend">
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box" style="background: #c92a2a;"></div>
+                            <span>Muy Retrasado (alta probabilidad)</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box" style="background: #f08c00;"></div>
+                            <span>Retrasado (probabilidad media-alta)</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box" style="background: #4dabf7;"></div>
+                            <span>Normal</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box" style="background: #2b8a3e;"></div>
+                            <span>Reciente (baja probabilidad)</span>
+                        </div>
+                    </div>
+                    
+                    <div id="quini-periodicidad-grid" class="patrones-grid">
+                        Cargando periodicidad...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PREDICCIÓN INTELIGENTE QUINI 6 -->
+            <div class="solapa-header" onclick="toggleSolapa('quini-prediccion-solapa')">
+                <h3>🔮 Predicción Inteligente (Quini 6)</h3>
+                <span class="solapa-icono" id="quini-prediccion-solapa-icono">▼</span>
+            </div>
+            <div class="solapa-contenido collapsed" id="quini-prediccion-solapa">
+                <div class="card-patrones">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0;">
+                        <strong>Top 15 números candidatos</strong> con mayor probabilidad de salir basados en análisis combinado de retraso, frecuencia y regularidad
+                    </p>
+                    <button onclick="cargarPrediccionQuini()" style="margin: 0.5rem 0;">🔄 Generar Predicción</button>
+                    
+                    <div id="quini-prediccion-candidatos" style="margin-top: 1rem;">
+                        Cargando predicción...
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- SECCIÓN DE APUESTA QUINI 6 -->
@@ -1253,6 +1308,7 @@
                 <button onclick="compararApuesta('quini')" class="btn-primary">🔍 Comparar con Sorteos</button>
                 <button onclick="generarApuestasInteligentes('quini')" class="btn-accent">🎯 5 Apuestas (Frecuencias)</button>
                 <button onclick="generarApuestasPorPatrones('quini')" class="btn-accent" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">❄️ 5 Apuestas (Patrones)</button>
+                <button onclick="generarApuestasPorPrediccion('quini')" class="btn-accent" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">🔮 5 Apuestas (Predicción IA)</button>
             </div>
             
             <!-- Solapa de Sugerencias Quini -->
@@ -1403,6 +1459,81 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- ANÁLISIS DE PERIODICIDAD LOTO PLUS -->
+            <div class="solapa-header" onclick="toggleSolapa('loto-periodicidad-solapa')">
+                <h3>📊 Análisis de Periodicidad (Loto Plus)</h3>
+                <span class="solapa-icono" id="loto-periodicidad-solapa-icono">▼</span>
+            </div>
+            <div class="solapa-contenido collapsed" id="loto-periodicidad-solapa">
+                <div class="card-patrones">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0;">
+                        <strong>Cada cuántos sorteos</strong> sale cada número y <strong>probabilidad</strong> de salir en el próximo sorteo
+                    </p>
+                    <button onclick="cargarPeriodicidadLoto()" style="margin: 0.5rem 0;">🔄 Actualizar Periodicidad</button>
+                    
+                    <div class="patron-legend">
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box" style="background: #c92a2a;"></div>
+                            <span>Muy Retrasado</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box" style="background: #f08c00;"></div>
+                            <span>Retrasado</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box" style="background: #4dabf7;"></div>
+                            <span>Normal</span>
+                        </div>
+                        <div class="patron-legend-item">
+                            <div class="patron-legend-box" style="background: #2b8a3e;"></div>
+                            <span>Reciente</span>
+                        </div>
+                    </div>
+                    
+                    <div class="loto-section">
+                        <h4>Números Tradicionales (1-42)</h4>
+                        <div id="loto-periodicidad-grid" class="patrones-grid">
+                            Cargando periodicidad...
+                        </div>
+                    </div>
+                    
+                    <div class="loto-section">
+                        <h4>Números Jack (0-9)</h4>
+                        <div id="loto-periodicidad-jack-grid" class="patrones-grid" style="grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));">
+                            Cargando periodicidad jack...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PREDICCIÓN INTELIGENTE LOTO PLUS -->
+            <div class="solapa-header" onclick="toggleSolapa('loto-prediccion-solapa')">
+                <h3>🔮 Predicción Inteligente (Loto Plus)</h3>
+                <span class="solapa-icono" id="loto-prediccion-solapa-icono">▼</span>
+            </div>
+            <div class="solapa-contenido collapsed" id="loto-prediccion-solapa">
+                <div class="card-patrones">
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0;">
+                        <strong>Top candidatos</strong> con mayor probabilidad de salir basados en análisis combinado
+                    </p>
+                    <button onclick="cargarPrediccionLoto()" style="margin: 0.5rem 0;">🔄 Generar Predicción</button>
+                    
+                    <div class="loto-section">
+                        <h4>Números Tradicionales</h4>
+                        <div id="loto-prediccion-candidatos" style="margin-top: 1rem;">
+                            Cargando predicción...
+                        </div>
+                    </div>
+                    
+                    <div class="loto-section">
+                        <h4>Números Jack</h4>
+                        <div id="loto-prediccion-jack" style="margin-top: 1rem;">
+                            Cargando predicción jack...
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- SECCIÓN DE APUESTA LOTO PLUS -->
@@ -1438,6 +1569,7 @@
                 <button onclick="compararApuesta('loto')" class="btn-primary">🔍 Comparar con Sorteos</button>
                 <button onclick="generarApuestasInteligentes('loto')" class="btn-accent">🍀 5 Apuestas (Frecuencias)</button>
                 <button onclick="generarApuestasPorPatrones('loto')" class="btn-accent" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">❄️ 5 Apuestas (Patrones)</button>
+                <button onclick="generarApuestasPorPrediccion('loto')" class="btn-accent" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">🔮 5 Apuestas (Predicción IA)</button>
             </div>
             
             <!-- Solapa de Sugerencias Loto -->
@@ -1920,6 +2052,325 @@
                 `;
             });
             
+            containerJack.innerHTML = htmlJack;
+        }
+        
+        // ============= FUNCIONES DE PERIODICIDAD QUINI 6 =============
+        async function cargarPeriodicidadQuini() {
+            try {
+                const response = await fetch('/periodicidad-quini');
+                const data = await response.json();
+                
+                actualizarPeriodicidadQuini(data);
+                
+                mostrarStatus('quini', '📊 Periodicidad actualizada', 'success');
+            } catch (error) {
+                mostrarStatus('quini', `❌ Error cargando periodicidad: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarPeriodicidadQuini(data) {
+            const container = document.getElementById('quini-periodicidad-grid');
+            
+            if (!data.periodicidad || data.periodicidad.length === 0) {
+                container.innerHTML = '<p>No hay datos de sorteos aún</p>';
+                return;
+            }
+            
+            let html = '';
+            data.periodicidad.forEach(item => {
+                const estadoClass = item.estado.replace(/-/g, '-');
+                const estadoColor = {
+                    'muy-retrasado': '#c92a2a',
+                    'retrasado': '#f08c00',
+                    'normal': '#4dabf7',
+                    'reciente': '#51cf66',
+                    'muy-reciente': '#2b8a3e',
+                    'nunca-salio': '#868e96'
+                }[item.estado] || '#868e96';
+                
+                const estadoIcono = {
+                    'muy-retrasado': '🔴🔴',
+                    'retrasado': '🔴',
+                    'normal': '🔵',
+                    'reciente': '🟢',
+                    'muy-reciente': '🟢🟢',
+                    'nunca-salio': '⚪'
+                }[item.estado] || '⚪';
+                
+                const intervaloTexto = item.intervaloPromedio !== null 
+                    ? `Sale cada ${item.intervaloPromedio} sorteos` 
+                    : 'Sin historial';
+                
+                const probabilidad = item.probabilidadProximoSorteo || 0;
+                
+                html += `
+                    <div class="numero-patron" style="border-color: ${estadoColor};">
+                        <div class="numero" style="color: ${estadoColor};">${item.numero.toString().padStart(2, '0')}</div>
+                        <div class="info">
+                            ${item.vecesAparecio > 0 ? `Salió ${item.vecesAparecio}x` : 'Nunca salió'}<br>
+                            ${intervaloTexto}<br>
+                            <strong style="color: ${estadoColor};">Prob: ${probabilidad}%</strong>
+                        </div>
+                        <div class="sorteos-sin-salir" style="color: ${estadoColor};">
+                            ${estadoIcono} ${item.sorteosSinSalir} sorteos
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // ============= FUNCIONES DE PERIODICIDAD LOTO PLUS =============
+        async function cargarPeriodicidadLoto() {
+            try {
+                const response = await fetch('/periodicidad-loto-plus');
+                const data = await response.json();
+                
+                actualizarPeriodicidadLoto(data);
+                
+                mostrarStatus('loto', '📊 Periodicidad Loto Plus actualizada', 'success');
+            } catch (error) {
+                mostrarStatus('loto', `❌ Error cargando periodicidad: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarPeriodicidadLoto(data) {
+            const containerNumeros = document.getElementById('loto-periodicidad-grid');
+            const containerJack = document.getElementById('loto-periodicidad-jack-grid');
+            
+            if (!data.periodicidad || data.periodicidad.length === 0) {
+                containerNumeros.innerHTML = '<p>No hay datos de sorteos aún</p>';
+                containerJack.innerHTML = '<p>No hay datos de sorteos aún</p>';
+                return;
+            }
+            
+            // NÚMEROS PRINCIPALES
+            let htmlNumeros = '';
+            data.periodicidad.forEach(item => {
+                const estadoColor = {
+                    'muy-retrasado': '#c92a2a',
+                    'retrasado': '#f08c00',
+                    'normal': '#4dabf7',
+                    'reciente': '#51cf66',
+                    'muy-reciente': '#2b8a3e',
+                    'nunca-salio': '#868e96'
+                }[item.estado] || '#868e96';
+                
+                const estadoIcono = {
+                    'muy-retrasado': '🔴🔴',
+                    'retrasado': '🔴',
+                    'normal': '🔵',
+                    'reciente': '🟢',
+                    'muy-reciente': '🟢🟢',
+                    'nunca-salio': '⚪'
+                }[item.estado] || '⚪';
+                
+                const intervaloTexto = item.intervaloPromedio !== null 
+                    ? `Cada ${item.intervaloPromedio} sorteos` 
+                    : 'Sin historial';
+                
+                const probabilidad = item.probabilidadProximoSorteo || 0;
+                
+                htmlNumeros += `
+                    <div class="numero-patron" style="border-color: ${estadoColor};">
+                        <div class="numero" style="color: ${estadoColor};">${item.numero.toString().padStart(2, '0')}</div>
+                        <div class="info">
+                            ${item.vecesAparecio}x | ${intervaloTexto}<br>
+                            <strong style="color: ${estadoColor};">Prob: ${probabilidad}%</strong>
+                        </div>
+                        <div class="sorteos-sin-salir" style="color: ${estadoColor};">
+                            ${estadoIcono} ${item.sorteosSinSalir} sorteos
+                        </div>
+                    </div>
+                `;
+            });
+            
+            containerNumeros.innerHTML = htmlNumeros;
+            
+            // NÚMEROS JACK
+            let htmlJack = '';
+            data.periodicidadJack.forEach(item => {
+                const estadoColor = {
+                    'muy-retrasado': '#c92a2a',
+                    'retrasado': '#f08c00',
+                    'normal': '#4dabf7',
+                    'reciente': '#51cf66',
+                    'muy-reciente': '#2b8a3e',
+                    'nunca-salio': '#868e96'
+                }[item.estado] || '#868e96';
+                
+                const estadoIcono = {
+                    'muy-retrasado': '🔴🔴',
+                    'retrasado': '🔴',
+                    'normal': '🔵',
+                    'reciente': '🟢',
+                    'muy-reciente': '🟢🟢',
+                    'nunca-salio': '⚪'
+                }[item.estado] || '⚪';
+                
+                const intervaloTexto = item.intervaloPromedio !== null 
+                    ? `Cada ${item.intervaloPromedio}` 
+                    : 'Sin historial';
+                
+                const probabilidad = item.probabilidadProximoSorteo || 0;
+                
+                htmlJack += `
+                    <div class="numero-patron" style="border-color: ${estadoColor};">
+                        <div class="numero" style="color: ${estadoColor};">${item.numero}</div>
+                        <div class="info">
+                            ${item.vecesAparecio}x | ${intervaloTexto}<br>
+                            <strong style="color: ${estadoColor};">Prob: ${probabilidad}%</strong>
+                        </div>
+                        <div class="sorteos-sin-salir" style="color: ${estadoColor};">
+                            ${estadoIcono} ${item.sorteosSinSalir}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            containerJack.innerHTML = htmlJack;
+        }
+        
+        // ============= FUNCIONES DE PREDICCIÓN QUINI 6 =============
+        async function cargarPrediccionQuini() {
+            try {
+                const response = await fetch('/prediccion-quini');
+                const data = await response.json();
+                
+                actualizarPrediccionQuini(data);
+                
+                mostrarStatus('quini', '🔮 Predicción generada', 'success');
+            } catch (error) {
+                mostrarStatus('quini', `❌ Error generando predicción: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarPrediccionQuini(data) {
+            const container = document.getElementById('quini-prediccion-candidatos');
+            
+            if (data.error || !data.candidatos || data.candidatos.length === 0) {
+                container.innerHTML = `<p>${data.error || 'No hay suficientes datos para predicción'}</p>`;
+                return;
+            }
+            
+            let html = '<div style="background: var(--bg-primary); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">';
+            html += '<h4 style="margin: 0 0 0.5rem 0; color: var(--accent-color);">📈 Score Predictivo:</h4>';
+            html += '<p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">';
+            html += '<strong>Retraso</strong> (40 pts): Tiempo sin salir vs patrón<br>';
+            html += '<strong>Frecuencia</strong> (30 pts): Qué tan seguido sale<br>';
+            html += '<strong>Regularidad</strong> (30 pts): Consistencia del patrón';
+            html += '</p></div>';
+            
+            html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem;">';
+            
+            data.candidatos.forEach((candidato, index) => {
+                const scoreColor = candidato.scorePredictivo >= 70 ? '#c92a2a' : 
+                                   candidato.scorePredictivo >= 50 ? '#f08c00' : 
+                                   candidato.scorePredictivo >= 30 ? '#4dabf7' : '#868e96';
+                
+                const medalla = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}°`;
+                
+                html += `
+                    <div style="background: var(--bg-tertiary); border: 2px solid ${scoreColor}; border-radius: 8px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: ${scoreColor};">
+                            ${candidato.numero.toString().padStart(2, '0')}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            ${medalla} Score: <strong style="color: ${scoreColor};">${candidato.scorePredictivo}</strong><br>
+                            ${candidato.sorteosSinSalir} sorteos sin salir<br>
+                            Ratio: ${candidato.ratioRetraso}x
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+        
+        // ============= FUNCIONES DE PREDICCIÓN LOTO PLUS =============
+        async function cargarPrediccionLoto() {
+            try {
+                const response = await fetch('/prediccion-loto-plus');
+                const data = await response.json();
+                
+                actualizarPrediccionLoto(data);
+                
+                mostrarStatus('loto', '🔮 Predicción Loto Plus generada', 'success');
+            } catch (error) {
+                mostrarStatus('loto', `❌ Error generando predicción: ${error.message}`, 'error');
+            }
+        }
+        
+        function actualizarPrediccionLoto(data) {
+            const containerNumeros = document.getElementById('loto-prediccion-candidatos');
+            const containerJack = document.getElementById('loto-prediccion-jack');
+            
+            if (data.error || !data.candidatos || data.candidatos.length === 0) {
+                containerNumeros.innerHTML = `<p>${data.error || 'No hay suficientes datos para predicción'}</p>`;
+                containerJack.innerHTML = `<p>${data.error || 'No hay suficientes datos para predicción'}</p>`;
+                return;
+            }
+            
+            // NÚMEROS TRADICIONALES
+            let htmlNumeros = '<div style="background: var(--bg-primary); padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">';
+            htmlNumeros += '<p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">';
+            htmlNumeros += '<strong>Score Predictivo</strong>: Combina retraso, frecuencia y regularidad';
+            htmlNumeros += '</p></div>';
+            
+            htmlNumeros += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem;">';
+            
+            data.candidatos.forEach((candidato, index) => {
+                const scoreColor = candidato.scorePredictivo >= 70 ? '#c92a2a' : 
+                                   candidato.scorePredictivo >= 50 ? '#f08c00' : 
+                                   candidato.scorePredictivo >= 30 ? '#4dabf7' : '#868e96';
+                
+                const medalla = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}°`;
+                
+                htmlNumeros += `
+                    <div style="background: var(--bg-tertiary); border: 2px solid ${scoreColor}; border-radius: 8px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: ${scoreColor};">
+                            ${candidato.numero.toString().padStart(2, '0')}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            ${medalla} Score: <strong style="color: ${scoreColor};">${candidato.scorePredictivo}</strong><br>
+                            ${candidato.sorteosSinSalir} sorteos<br>
+                            Ratio: ${candidato.ratioRetraso}x
+                        </div>
+                    </div>
+                `;
+            });
+            
+            htmlNumeros += '</div>';
+            containerNumeros.innerHTML = htmlNumeros;
+            
+            // NÚMEROS JACK
+            let htmlJack = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem;">';
+            
+            data.candidatosJack.forEach((candidato, index) => {
+                const scoreColor = candidato.scorePredictivo >= 70 ? '#c92a2a' : 
+                                   candidato.scorePredictivo >= 50 ? '#f08c00' : 
+                                   candidato.scorePredictivo >= 30 ? '#4dabf7' : '#868e96';
+                
+                const medalla = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}°`;
+                
+                htmlJack += `
+                    <div style="background: var(--bg-tertiary); border: 2px solid ${scoreColor}; border-radius: 8px; padding: 0.75rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: ${scoreColor};">
+                            ${candidato.numero}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            ${medalla}<br>
+                            Score: <strong style="color: ${scoreColor};">${candidato.scorePredictivo}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            htmlJack += '</div>';
             containerJack.innerHTML = htmlJack;
         }
         
@@ -3303,6 +3754,132 @@
             }
         }
         
+        // ============= GENERAR APUESTAS POR PREDICCIÓN IA =============
+        async function generarApuestasPorPrediccion(juego) {
+            try {
+                // Obtener predicción
+                const response = await fetch(juego === 'quini' ? '/prediccion-quini' : '/prediccion-loto-plus');
+                
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error || !data.candidatos || data.candidatos.length < 6) {
+                    alert(`No hay datos suficientes para generar predicción de ${juego === 'quini' ? 'Quini 6' : 'Loto Plus'}.\n\nSe necesitan al menos 10 sorteos.`);
+                    return;
+                }
+                
+                const candidatos = data.candidatos;
+                const candidatosJack = data.candidatosJack || [];
+                
+                // Generar 5 estrategias basadas en PREDICCIÓN IA
+                const sugerencias = [];
+                
+                // Estrategia 1: TOP 6 - Los más probables
+                sugerencias.push({
+                    numeros: candidatos.slice(0, 6).map(c => c.numero).sort((a, b) => a - b),
+                    estrategia: '🥇 TOP 6 Elite',
+                    descripcion: `Los 6 números con MAYOR score predictivo (${candidatos[0].scorePredictivo.toFixed(1)}-${candidatos[5].scorePredictivo.toFixed(1)} pts)`,
+                    confianza: 'Muy Alta ⭐⭐⭐',
+                    scorePredictivo: (candidatos.slice(0, 6).reduce((sum, c) => sum + c.scorePredictivo, 0) / 6).toFixed(1)
+                });
+                
+                // Estrategia 2: Posiciones 1-4 + 7-8 (salteando 5-6)
+                const seleccion2 = [
+                    ...candidatos.slice(0, 4).map(c => c.numero),
+                    ...candidatos.slice(6, 8).map(c => c.numero)
+                ];
+                sugerencias.push({
+                    numeros: seleccion2.sort((a, b) => a - b),
+                    estrategia: '🥈 Variante Elite',
+                    descripcion: 'Top 4 + posiciones 7-8 (variación inteligente)',
+                    confianza: 'Muy Alta ⭐⭐⭐',
+                    scorePredictivo: (candidatos[0].scorePredictivo + candidatos[1].scorePredictivo + 
+                                     candidatos[2].scorePredictivo + candidatos[3].scorePredictivo +
+                                     candidatos[6].scorePredictivo + candidatos[7].scorePredictivo) / 6
+                });
+                
+                // Estrategia 3: Posiciones 3-8 (rango medio-alto)
+                sugerencias.push({
+                    numeros: candidatos.slice(2, 8).map(c => c.numero).sort((a, b) => a - b),
+                    estrategia: '🥉 Rango Alto',
+                    descripcion: 'Posiciones 3 a 8 del ranking predictivo',
+                    confianza: 'Alta ⭐⭐',
+                    scorePredictivo: (candidatos.slice(2, 8).reduce((sum, c) => sum + c.scorePredictivo, 0) / 6).toFixed(1)
+                });
+                
+                // Estrategia 4: Mix Top + Sorpresa (primeros 3 + 3 del rango 9-15)
+                const seleccion4 = [
+                    ...candidatos.slice(0, 3).map(c => c.numero),
+                    ...candidatos.slice(8, 11).map(c => c.numero)
+                ];
+                sugerencias.push({
+                    numeros: seleccion4.sort((a, b) => a - b),
+                    estrategia: '🎯 Mix Estratégico',
+                    descripcion: 'Top 3 + 3 sorpresas del rango 9-11',
+                    confianza: 'Alta ⭐⭐',
+                    scorePredictivo: ((candidatos[0].scorePredictivo + candidatos[1].scorePredictivo + 
+                                     candidatos[2].scorePredictivo + candidatos[8].scorePredictivo +
+                                     candidatos[9].scorePredictivo + candidatos[10].scorePredictivo) / 6).toFixed(1)
+                });
+                
+                // Estrategia 5: Equilibrada (1 top, 2 altos, 2 medios, 1 bajo)
+                const seleccion5 = [
+                    candidatos[0].numero,    // #1
+                    candidatos[3].numero,    // #4
+                    candidatos[5].numero,    // #6
+                    candidatos[7].numero,    // #8
+                    candidatos[10].numero,   // #11
+                    candidatos[13].numero    // #14
+                ];
+                sugerencias.push({
+                    numeros: seleccion5.sort((a, b) => a - b),
+                    estrategia: '⚖️ Equilibrada',
+                    descripcion: 'Distribución balanceada del ranking (1°, 4°, 6°, 8°, 11°, 14°)',
+                    confianza: 'Media-Alta ⭐',
+                    scorePredictivo: ((candidatos[0].scorePredictivo + candidatos[3].scorePredictivo + 
+                                     candidatos[5].scorePredictivo + candidatos[7].scorePredictivo +
+                                     candidatos[10].scorePredictivo + candidatos[13].scorePredictivo) / 6).toFixed(1)
+                });
+                
+                // Agregar jacks para Loto Plus basados en predicción
+                if (juego === 'loto' && candidatosJack.length >= 5) {
+                    sugerencias.forEach((sugerencia, index) => {
+                        switch (index) {
+                            case 0: // Top jack
+                                sugerencia.jack = candidatosJack[0].numero;
+                                break;
+                            case 1: // Segundo jack
+                                sugerencia.jack = candidatosJack[1].numero;
+                                break;
+                            case 2: // Tercer jack
+                                sugerencia.jack = candidatosJack[2].numero;
+                                break;
+                            case 3: // Cuarto jack
+                                sugerencia.jack = candidatosJack[3].numero;
+                                break;
+                            case 4: // Quinto jack
+                                sugerencia.jack = candidatosJack[4].numero;
+                                break;
+                        }
+                    });
+                } else if (juego === 'loto' && candidatosJack.length > 0) {
+                    // Si hay menos de 5, usar los que haya
+                    sugerencias.forEach((sugerencia, index) => {
+                        sugerencia.jack = candidatosJack[Math.min(index, candidatosJack.length - 1)].numero;
+                    });
+                }
+                
+                mostrarSugerencias(juego, sugerencias);
+                
+            } catch (error) {
+                console.error('Error generando predicción:', error);
+                alert(`❌ Error al generar predicción IA:\n\n${error.message}`);
+            }
+        }
+        
         // Estrategia 1: Números más frecuentes
         function generarApuestaFrecuentes(frecuencias, cantidad, estrategia) {
             const numerosFrecuentes = frecuencias
@@ -3438,6 +4015,11 @@
                 const numerosTexto = sugerencia.numeros.join(' - ');
                 const jackTexto = sugerencia.jack !== undefined ? ` | Jack: ${sugerencia.jack}` : '';
                 
+                // Mostrar score predictivo si está disponible
+                const scoreTexto = sugerencia.scorePredictivo 
+                    ? `<br><strong>Score IA:</strong> ${sugerencia.scorePredictivo} pts` 
+                    : '';
+                
                 html += `
                     <div class="sugerencia-item">
                         <div class="sugerencia-header-item">
@@ -3451,7 +4033,7 @@
                         
                         <div class="sugerencia-info">
                             <strong>Estrategia:</strong> ${sugerencia.descripcion}<br>
-                            <strong>Confianza:</strong> ${sugerencia.confianza}
+                            <strong>Confianza:</strong> ${sugerencia.confianza}${scoreTexto}
                         </div>
                         
                         <button class="btn-usar-sugerencia" onclick="usarSugerencia('${juego}', [${sugerencia.numeros.join(',')}]${sugerencia.jack !== undefined ? `, ${sugerencia.jack}` : ''})">

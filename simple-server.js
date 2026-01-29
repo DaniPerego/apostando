@@ -1019,11 +1019,497 @@ async function start() {
             }
         });
 
+        // 12. ANÁLISIS DE PERIODICIDAD QUINI 6 - Cada cuántos sorteos sale cada número
+        app.get('/periodicidad-quini', async (req, res) => {
+            try {
+                // Obtener todos los sorteos ordenados cronológicamente
+                const [sorteos] = await db.execute(`
+                    SELECT s.id as concurso, s.fecha 
+                    FROM quini_sorteos s 
+                    ORDER BY s.fecha ASC
+                `);
+                
+                if (sorteos.length === 0) {
+                    return res.json({ periodicidad: [] });
+                }
+                
+                const totalSorteos = sorteos.length;
+                const periodicidad = [];
+                
+                // Analizar cada número
+                for (let num = 0; num <= 45; num++) {
+                    // Obtener posiciones de sorteo donde apareció (numeradas desde 1)
+                    const [apariciones] = await db.execute(`
+                        SELECT s.id as concurso, s.fecha,
+                               ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                        FROM quini_sorteos s
+                        INNER JOIN quini_numeros n ON s.id = n.sorteo_id
+                        WHERE n.numero = ? AND n.tipo IN ('primer', 'segunda', 'revancha', 'siempre')
+                        ORDER BY s.fecha ASC
+                    `, [num]);
+                    
+                    if (apariciones.length === 0) {
+                        periodicidad.push({
+                            numero: num,
+                            vecesAparecio: 0,
+                            intervaloPromedio: null,
+                            intervaloMinimo: null,
+                            intervaloMaximo: null,
+                            desviacionEstandar: null,
+                            sorteosSinSalir: totalSorteos,
+                            probabilidadProximoSorteo: 0,
+                            estado: 'nunca-salio'
+                        });
+                        continue;
+                    }
+                    
+                    // Calcular intervalos entre apariciones consecutivas
+                    const intervalos = [];
+                    for (let i = 1; i < apariciones.length; i++) {
+                        intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+                    }
+                    
+                    // Estadísticas de intervalos
+                    let intervaloPromedio = null;
+                    let intervaloMin = null;
+                    let intervaloMax = null;
+                    let desviacion = null;
+                    
+                    if (intervalos.length > 0) {
+                        intervaloPromedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+                        intervaloMin = Math.min(...intervalos);
+                        intervaloMax = Math.max(...intervalos);
+                        
+                        // Desviación estándar
+                        const varianza = intervalos.reduce((acc, val) => acc + Math.pow(val - intervaloPromedio, 2), 0) / intervalos.length;
+                        desviacion = Math.sqrt(varianza);
+                    }
+                    
+                    // Sorteos desde última aparición
+                    const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+                    const sorteosSinSalir = totalSorteos - ultimaPosicion;
+                    
+                    // PREDICCIÓN: Calcular probabilidad basada en el retraso actual vs el patrón histórico
+                    let probabilidad = 0;
+                    let estado = 'normal';
+                    
+                    if (intervaloPromedio && intervaloPromedio > 0) {
+                        // Probabilidad aumenta cuanto más sorteos sin salir vs el promedio
+                        const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+                        
+                        // Fórmula de probabilidad: aumenta exponencialmente con el retraso
+                        // Si sorteosSinSalir = intervaloPromedio, probabilidad ~50%
+                        // Si sorteosSinSalir = 2*intervaloPromedio, probabilidad ~75%
+                        probabilidad = Math.min(95, (1 - Math.exp(-ratioRetraso * 0.8)) * 100);
+                        
+                        // Clasificar estado
+                        if (ratioRetraso >= 2.5) {
+                            estado = 'muy-retrasado';
+                        } else if (ratioRetraso >= 1.5) {
+                            estado = 'retrasado';
+                        } else if (ratioRetraso >= 0.8) {
+                            estado = 'normal';
+                        } else if (ratioRetraso >= 0.3) {
+                            estado = 'reciente';
+                        } else {
+                            estado = 'muy-reciente';
+                        }
+                    } else if (apariciones.length === 1) {
+                        // Solo salió una vez, usar heurística simple
+                        probabilidad = Math.min(90, sorteosSinSalir * 2);
+                        estado = sorteosSinSalir > 20 ? 'muy-retrasado' : sorteosSinSalir > 10 ? 'retrasado' : 'reciente';
+                    }
+                    
+                    periodicidad.push({
+                        numero: num,
+                        vecesAparecio: apariciones.length,
+                        intervaloPromedio: intervaloPromedio ? Math.round(intervaloPromedio * 100) / 100 : null,
+                        intervaloMinimo: intervaloMin,
+                        intervaloMaximo: intervaloMax,
+                        desviacionEstandar: desviacion ? Math.round(desviacion * 100) / 100 : null,
+                        sorteosSinSalir: sorteosSinSalir,
+                        probabilidadProximoSorteo: Math.round(probabilidad * 100) / 100,
+                        estado: estado,
+                        ultimaAparicion: apariciones[apariciones.length - 1].fecha
+                    });
+                }
+                
+                // Ordenar por probabilidad descendente
+                periodicidad.sort((a, b) => b.probabilidadProximoSorteo - a.probabilidadProximoSorteo);
+                
+                res.json({
+                    periodicidad,
+                    totalSorteos,
+                    analisisGenerado: new Date().toISOString()
+                });
+                
+            } catch (error) {
+                console.error('Error calculando periodicidad Quini:', error);
+                res.status(500).json({ error: 'Error en análisis de periodicidad' });
+            }
+        });
+
+        // 13. ANÁLISIS DE PERIODICIDAD LOTO PLUS
+        app.get('/periodicidad-loto-plus', async (req, res) => {
+            try {
+                const [sorteos] = await db.execute(`
+                    SELECT s.id as concurso, s.fecha 
+                    FROM loto_plus_sorteos s 
+                    ORDER BY s.fecha ASC
+                `);
+                
+                if (sorteos.length === 0) {
+                    return res.json({ periodicidad: [], periodicidadJack: [] });
+                }
+                
+                const totalSorteos = sorteos.length;
+                const periodicidad = [];
+                const periodicidadJack = [];
+                
+                // Analizar números tradicionales (1-42)
+                for (let num = 1; num <= 42; num++) {
+                    const [apariciones] = await db.execute(`
+                        SELECT s.id as concurso, s.fecha,
+                               ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                        FROM loto_plus_sorteos s
+                        INNER JOIN loto_plus_numeros n ON s.id = n.sorteo_id
+                        WHERE n.numero = ? AND n.tipo IN ('tradicional', 'match', 'desquite', 'sale_o_sale')
+                        ORDER BY s.fecha ASC
+                    `, [num]);
+                    
+                    if (apariciones.length === 0) {
+                        periodicidad.push({
+                            numero: num,
+                            vecesAparecio: 0,
+                            intervaloPromedio: null,
+                            sorteosSinSalir: totalSorteos,
+                            probabilidadProximoSorteo: 0,
+                            estado: 'nunca-salio'
+                        });
+                        continue;
+                    }
+                    
+                    const intervalos = [];
+                    for (let i = 1; i < apariciones.length; i++) {
+                        intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+                    }
+                    
+                    const intervaloPromedio = intervalos.length > 0 
+                        ? intervalos.reduce((a, b) => a + b, 0) / intervalos.length 
+                        : null;
+                    
+                    const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+                    const sorteosSinSalir = totalSorteos - ultimaPosicion;
+                    
+                    let probabilidad = 0;
+                    let estado = 'normal';
+                    
+                    if (intervaloPromedio && intervaloPromedio > 0) {
+                        const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+                        probabilidad = Math.min(95, (1 - Math.exp(-ratioRetraso * 0.8)) * 100);
+                        
+                        if (ratioRetraso >= 2.5) estado = 'muy-retrasado';
+                        else if (ratioRetraso >= 1.5) estado = 'retrasado';
+                        else if (ratioRetraso >= 0.8) estado = 'normal';
+                        else if (ratioRetraso >= 0.3) estado = 'reciente';
+                        else estado = 'muy-reciente';
+                    }
+                    
+                    periodicidad.push({
+                        numero: num,
+                        vecesAparecio: apariciones.length,
+                        intervaloPromedio: intervaloPromedio ? Math.round(intervaloPromedio * 100) / 100 : null,
+                        sorteosSinSalir: sorteosSinSalir,
+                        probabilidadProximoSorteo: Math.round(probabilidad * 100) / 100,
+                        estado: estado,
+                        ultimaAparicion: apariciones[apariciones.length - 1].fecha
+                    });
+                }
+                
+                // Analizar JACK (0-9)
+                for (let num = 0; num <= 9; num++) {
+                    const [apariciones] = await db.execute(`
+                        SELECT s.id as concurso, s.fecha,
+                               ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                        FROM loto_plus_sorteos s
+                        INNER JOIN loto_plus_numeros n ON s.id = n.sorteo_id
+                        WHERE n.numero = ? AND n.tipo = 'jack'
+                        ORDER BY s.fecha ASC
+                    `, [num]);
+                    
+                    if (apariciones.length === 0) {
+                        periodicidadJack.push({
+                            numero: num,
+                            vecesAparecio: 0,
+                            intervaloPromedio: null,
+                            sorteosSinSalir: totalSorteos,
+                            probabilidadProximoSorteo: 0,
+                            estado: 'nunca-salio'
+                        });
+                        continue;
+                    }
+                    
+                    const intervalos = [];
+                    for (let i = 1; i < apariciones.length; i++) {
+                        intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+                    }
+                    
+                    const intervaloPromedio = intervalos.length > 0 
+                        ? intervalos.reduce((a, b) => a + b, 0) / intervalos.length 
+                        : null;
+                    
+                    const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+                    const sorteosSinSalir = totalSorteos - ultimaPosicion;
+                    
+                    let probabilidad = 0;
+                    let estado = 'normal';
+                    
+                    if (intervaloPromedio && intervaloPromedio > 0) {
+                        const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+                        probabilidad = Math.min(95, (1 - Math.exp(-ratioRetraso * 0.8)) * 100);
+                        
+                        if (ratioRetraso >= 2.5) estado = 'muy-retrasado';
+                        else if (ratioRetraso >= 1.5) estado = 'retrasado';
+                        else if (ratioRetraso >= 0.8) estado = 'normal';
+                        else if (ratioRetraso >= 0.3) estado = 'reciente';
+                        else estado = 'muy-reciente';
+                    }
+                    
+                    periodicidadJack.push({
+                        numero: num,
+                        vecesAparecio: apariciones.length,
+                        intervaloPromedio: intervaloPromedio ? Math.round(intervaloPromedio * 100) / 100 : null,
+                        sorteosSinSalir: sorteosSinSalir,
+                        probabilidadProximoSorteo: Math.round(probabilidad * 100) / 100,
+                        estado: estado,
+                        ultimaAparicion: apariciones[apariciones.length - 1].fecha
+                    });
+                }
+                
+                periodicidad.sort((a, b) => b.probabilidadProximoSorteo - a.probabilidadProximoSorteo);
+                periodicidadJack.sort((a, b) => b.probabilidadProximoSorteo - a.probabilidadProximoSorteo);
+                
+                res.json({
+                    periodicidad,
+                    periodicidadJack,
+                    totalSorteos,
+                    analisisGenerado: new Date().toISOString()
+                });
+                
+            } catch (error) {
+                console.error('Error calculando periodicidad Loto Plus:', error);
+                res.status(500).json({ error: 'Error en análisis de periodicidad' });
+            }
+        });
+
+        // 14. PREDICCIÓN INTELIGENTE QUINI 6 - Top números candidatos
+        app.get('/prediccion-quini', async (req, res) => {
+            try {
+                const [sorteos] = await db.execute(`
+                    SELECT s.id, s.fecha FROM quini_sorteos s ORDER BY s.fecha ASC
+                `);
+                
+                if (sorteos.length < 10) {
+                    return res.json({ 
+                        error: 'Se necesitan al menos 10 sorteos para predicción',
+                        candidatos: []
+                    });
+                }
+                
+                const totalSorteos = sorteos.length;
+                const candidatos = [];
+                
+                for (let num = 0; num <= 45; num++) {
+                    const [apariciones] = await db.execute(`
+                        SELECT ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                        FROM quini_sorteos s
+                        INNER JOIN quini_numeros n ON s.id = n.sorteo_id
+                        WHERE n.numero = ? AND n.tipo IN ('primer', 'segunda', 'revancha', 'siempre')
+                        ORDER BY s.fecha ASC
+                    `, [num]);
+                    
+                    if (apariciones.length === 0) continue;
+                    
+                    const intervalos = [];
+                    for (let i = 1; i < apariciones.length; i++) {
+                        intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+                    }
+                    
+                    if (intervalos.length === 0) continue;
+                    
+                    const intervaloPromedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+                    const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+                    const sorteosSinSalir = totalSorteos - ultimaPosicion;
+                    const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+                    
+                    // Calcular score predictivo (0-100)
+                    let score = 0;
+                    
+                    // Factor 1: Retraso (40 puntos máx) - Más retraso = más score
+                    score += Math.min(40, ratioRetraso * 20);
+                    
+                    // Factor 2: Frecuencia histórica (30 puntos máx) - Más apariciones = más score
+                    const frecuenciaRelativa = apariciones.length / totalSorteos;
+                    score += frecuenciaRelativa * 30;
+                    
+                    // Factor 3: Regularidad (30 puntos máx) - Menos variación = más score
+                    const varianza = intervalos.reduce((acc, val) => 
+                        acc + Math.pow(val - intervaloPromedio, 2), 0) / intervalos.length;
+                    const coeficienteVariacion = Math.sqrt(varianza) / intervaloPromedio;
+                    score += Math.max(0, 30 - (coeficienteVariacion * 15));
+                    
+                    candidatos.push({
+                        numero: num,
+                        scorePredictivo: Math.round(score * 100) / 100,
+                        sorteosSinSalir,
+                        intervaloPromedio: Math.round(intervaloPromedio * 100) / 100,
+                        vecesAparecio: apariciones.length,
+                        ratioRetraso: Math.round(ratioRetraso * 100) / 100
+                    });
+                }
+                
+                // Ordenar por score predictivo
+                candidatos.sort((a, b) => b.scorePredictivo - a.scorePredictivo);
+                
+                // Top 15 candidatos
+                const topCandidatos = candidatos.slice(0, 15);
+                
+                res.json({
+                    candidatos: topCandidatos,
+                    totalSorteos,
+                    fechaPrediccion: new Date().toISOString(),
+                    nota: 'Score predictivo combina retraso, frecuencia histórica y regularidad'
+                });
+                
+            } catch (error) {
+                console.error('Error en predicción Quini:', error);
+                res.status(500).json({ error: 'Error generando predicción' });
+            }
+        });
+
+        // 15. PREDICCIÓN INTELIGENTE LOTO PLUS
+        app.get('/prediccion-loto-plus', async (req, res) => {
+            try {
+                const [sorteos] = await db.execute(`
+                    SELECT s.id, s.fecha FROM loto_plus_sorteos s ORDER BY s.fecha ASC
+                `);
+                
+                if (sorteos.length < 10) {
+                    return res.json({ 
+                        error: 'Se necesitan al menos 10 sorteos para predicción',
+                        candidatos: [],
+                        candidatosJack: []
+                    });
+                }
+                
+                const totalSorteos = sorteos.length;
+                const candidatos = [];
+                const candidatosJack = [];
+                
+                // Analizar números tradicionales
+                for (let num = 1; num <= 42; num++) {
+                    const [apariciones] = await db.execute(`
+                        SELECT ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                        FROM loto_plus_sorteos s
+                        INNER JOIN loto_plus_numeros n ON s.id = n.sorteo_id
+                        WHERE n.numero = ? AND n.tipo IN ('tradicional', 'match', 'desquite', 'sale_o_sale')
+                        ORDER BY s.fecha ASC
+                    `, [num]);
+                    
+                    if (apariciones.length === 0) continue;
+                    
+                    const intervalos = [];
+                    for (let i = 1; i < apariciones.length; i++) {
+                        intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+                    }
+                    
+                    if (intervalos.length === 0) continue;
+                    
+                    const intervaloPromedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+                    const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+                    const sorteosSinSalir = totalSorteos - ultimaPosicion;
+                    const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+                    
+                    let score = 0;
+                    score += Math.min(40, ratioRetraso * 20);
+                    const frecuenciaRelativa = apariciones.length / totalSorteos;
+                    score += frecuenciaRelativa * 30;
+                    const varianza = intervalos.reduce((acc, val) => 
+                        acc + Math.pow(val - intervaloPromedio, 2), 0) / intervalos.length;
+                    const coeficienteVariacion = Math.sqrt(varianza) / intervaloPromedio;
+                    score += Math.max(0, 30 - (coeficienteVariacion * 15));
+                    
+                    candidatos.push({
+                        numero: num,
+                        scorePredictivo: Math.round(score * 100) / 100,
+                        sorteosSinSalir,
+                        intervaloPromedio: Math.round(intervaloPromedio * 100) / 100,
+                        vecesAparecio: apariciones.length,
+                        ratioRetraso: Math.round(ratioRetraso * 100) / 100
+                    });
+                }
+                
+                // Analizar JACK
+                for (let num = 0; num <= 9; num++) {
+                    const [apariciones] = await db.execute(`
+                        SELECT ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                        FROM loto_plus_sorteos s
+                        INNER JOIN loto_plus_numeros n ON s.id = n.sorteo_id
+                        WHERE n.numero = ? AND n.tipo = 'jack'
+                        ORDER BY s.fecha ASC
+                    `, [num]);
+                    
+                    if (apariciones.length === 0) continue;
+                    
+                    const intervalos = [];
+                    for (let i = 1; i < apariciones.length; i++) {
+                        intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+                    }
+                    
+                    if (intervalos.length === 0) continue;
+                    
+                    const intervaloPromedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+                    const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+                    const sorteosSinSalir = totalSorteos - ultimaPosicion;
+                    const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+                    
+                    let score = 0;
+                    score += Math.min(40, ratioRetraso * 20);
+                    score += (apariciones.length / totalSorteos) * 30;
+                    
+                    candidatosJack.push({
+                        numero: num,
+                        scorePredictivo: Math.round(score * 100) / 100,
+                        sorteosSinSalir,
+                        intervaloPromedio: Math.round(intervaloPromedio * 100) / 100,
+                        vecesAparecio: apariciones.length,
+                        ratioRetraso: Math.round(ratioRetraso * 100) / 100
+                    });
+                }
+                
+                candidatos.sort((a, b) => b.scorePredictivo - a.scorePredictivo);
+                candidatosJack.sort((a, b) => b.scorePredictivo - a.scorePredictivo);
+                
+                res.json({
+                    candidatos: candidatos.slice(0, 15),
+                    candidatosJack: candidatosJack.slice(0, 5),
+                    totalSorteos,
+                    fechaPrediccion: new Date().toISOString(),
+                    nota: 'Score predictivo combina retraso, frecuencia histórica y regularidad'
+                });
+                
+            } catch (error) {
+                console.error('Error en predicción Loto Plus:', error);
+                res.status(500).json({ error: 'Error generando predicción' });
+            }
+        });
+
         // Iniciar servidor
         app.listen(PORT, () => {
             console.log(`🚀 Servidor simple en http://localhost:${PORT}`);
             console.log('📊 Quini 6: /sorteo (POST), /sorteos (GET), /frecuencias (GET), /patrones-quini (GET), /sorteo/eliminar (POST), /sorteo/actualizar (PUT), /sorteo/actualizar-ganador (PUT)');
             console.log('📊 Loto Plus: /loto-plus (POST), /sorteos-loto-plus (GET), /frecuencias-loto-plus (GET), /patrones-loto-plus (GET), /loto-plus/eliminar (POST), /loto-plus/actualizar (PUT), /loto-plus/actualizar-ganador (PUT)');
+            console.log('🔮 Análisis Predictivo: /periodicidad-quini, /periodicidad-loto-plus, /prediccion-quini, /prediccion-loto-plus');
         });
         
     } catch (error) {
