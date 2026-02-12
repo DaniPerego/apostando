@@ -111,6 +111,46 @@
             color: #6b7280;
             margin-bottom: 1rem;
         }
+        #historial-quini, #historial-loto-plus {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            color: #495057;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .sorteo-item {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .sorteo-header {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+        .sorteo-line {
+            margin: 0.4rem 0;
+            font-size: 0.95rem;
+        }
+        .sorteo-label {
+            font-weight: 600;
+            color: #374151;
+            display: inline-block;
+            min-width: 180px;
+        }
+        .numeros {
+            color: #059669;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -207,6 +247,16 @@
         <pre id="modelo-loto-plus">Cargando datos...</pre>
     </section>
     -->
+
+    <section>
+        <h2>Historial de Sorteos - Quini 6</h2>
+        <div id="historial-quini">Cargando historial...</div>
+    </section>
+
+    <section>
+        <h2>Historial de Sorteos - Loto Plus</h2>
+        <div id="historial-loto-plus">Cargando historial...</div>
+    </section>
 
     <section>
         <h2>Estadísticas de Números Sorteados</h2>

@@ -110,10 +110,30 @@ async function apiRequest(endpoint, options = {}) {
 async function loadQuiniData() {
     try {
         const sorteos = await apiRequest('/quini');
-        qs('#modelo-quini').textContent = JSON.stringify(sorteos, null, 2);
+        
+        // Mostrar historial formateado
+        if (sorteos && sorteos.length > 0) {
+            let html = '';
+            sorteos.forEach(sorteo => {
+                html += `<div class="sorteo-item">`;
+                html += `<div class="sorteo-header">Sorteo #${sorteo.id} - ${sorteo.fecha}</div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Tradicional (Primer Sorteo):</span> <span class="numeros">${sorteo.primerSorteo.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Segunda del Quini:</span> <span class="numeros">${sorteo.segundaDelQuini.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Revancha:</span> <span class="numeros">${sorteo.revancha.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Siempre Sale:</span> <span class="numeros">${sorteo.siempreSale.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                if (sorteo.premioExtra && sorteo.premioExtra.length > 0) {
+                    html += `<div class="sorteo-line"><span class="sorteo-label">Premio Extra (2+1):</span> <span class="numeros">${sorteo.premioExtra.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                }
+                html += `</div>`;
+            });
+            qs('#historial-quini').innerHTML = html;
+        } else {
+            qs('#historial-quini').textContent = '(sin sorteos guardados)';
+        }
+        
         return sorteos;
     } catch (error) {
-        qs('#modelo-quini').textContent = `Error: ${error.message}`;
+        qs('#historial-quini').textContent = `Error: ${error.message}`;
         throw error;
     }
 }
@@ -141,7 +161,7 @@ async function loadQuiniFrequencies() {
 
 
 async function loadAllData() {
-    setLoading('#modelo-quini', true);
+    setLoading('#historial-quini', true);
     setLoading('#frecuencias-quini', true);
 
     try {
@@ -154,7 +174,7 @@ async function loadAllData() {
         updateConnectionStatus(false, 'Error cargando datos');
         console.error('Error loading data:', error);
     } finally {
-        setLoading('#modelo-quini', false);
+        setLoading('#historial-quini', false);
         setLoading('#frecuencias-quini', false);
     }
 }
@@ -261,21 +281,33 @@ function loadLotoPlusFrequencies() {
 }
 
 // Mostrar datos de Loto Plus
-function displayLotoPlusData() {
+async function displayLotoPlusData() {
     try {
-        const displayData = lotoPlusSorteos.map(sorteo => ({
-            concursoID_LotoPlus: sorteo.concursoID_LotoPlus,
-            fechaSorteo: sorteo.fechaSorteo,
-            tradicional: sorteo.tradicional,
-            match: sorteo.match,
-            desquite: sorteo.desquite,
-            saleOSale: sorteo.saleOSale,
-            numeroJack: sorteo.numeroJack
-        }));
-
-        qs('#modelo-loto-plus').textContent = JSON.stringify(displayData, null, 2);
+        const sorteos = await apiRequest('/loto-plus');
+        lotoPlusSorteos = sorteos; // Actualizar variable global
+        
+        // Mostrar historial formateado
+        if (sorteos && sorteos.length > 0) {
+            let html = '';
+            sorteos.forEach(sorteo => {
+                html += `<div class="sorteo-item">`;
+                html += `<div class="sorteo-header">Sorteo #${sorteo.id} - ${sorteo.fecha}</div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Tradicional:</span> <span class="numeros">${sorteo.tradicional.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Match:</span> <span class="numeros">${sorteo.match.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Desquite:</span> <span class="numeros">${sorteo.desquite.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Sale o Sale:</span> <span class="numeros">${sorteo.saleOSale.map(n => String(n).padStart(2, '0')).join(', ')}</span></div>`;
+                html += `<div class="sorteo-line"><span class="sorteo-label">Número Jack:</span> <span class="numeros">${sorteo.numeroJack}</span></div>`;
+                html += `</div>`;
+            });
+            qs('#historial-loto-plus').innerHTML = html;
+        } else {
+            qs('#historial-loto-plus').textContent = '(sin sorteos guardados)';
+        }
+        
+        return sorteos;
     } catch (error) {
-        qs('#modelo-loto-plus').textContent = `Error: ${error.message}`;
+        qs('#historial-loto-plus').textContent = `Error: ${error.message}`;
+        throw error;
     }
 }
 
@@ -291,8 +323,8 @@ async function handleLotoPlusSubmit(event) {
     try {
         const formData = new FormData(event.target);
 
-        const concursoID_LotoPlus = parseInt(formData.get('concursoIdLotoPlus'));
-        const fechaSorteo = formData.get('fecha');
+        const concursoId = parseInt(formData.get('concursoIdLotoPlus'));
+        const fecha = formData.get('fecha');
         const tradicional = parseNumbers(formData.get('tradicional'), { min: 1, max: 45, requiredCount: 6 });
         const match = parseNumbers(formData.get('match'), { min: 1, max: 45, requiredCount: 6 });
         const desquite = parseNumbers(formData.get('desquite'), { min: 1, max: 45, requiredCount: 6 });
@@ -304,24 +336,26 @@ async function handleLotoPlusSubmit(event) {
         }
 
         const sorteoData = {
-            concursoID_LotoPlus,
-            fechaSorteo,
-            tradicional: tradicional.map(n => String(n).padStart(2, '0')),
-            match: match.map(n => String(n).padStart(2, '0')),
-            desquite: desquite.map(n => String(n).padStart(2, '0')),
-            saleOSale: saleOSale.map(n => String(n).padStart(2, '0')),
+            concursoId,
+            fecha,
+            tradicional,
+            match,
+            desquite,
+            saleOSale,
             numeroJack
         };
 
-        // Agregar al array local (simulando persistencia)
-        lotoPlusSorteos.push(sorteoData);
+        await apiRequest('/loto-plus', {
+            method: 'POST',
+            body: JSON.stringify(sorteoData)
+        });
 
         event.target.reset();
-        showMessage('#mensaje-loto-plus', `Sorteo Loto Plus #${concursoID_LotoPlus} guardado exitosamente.`, false);
+        showMessage('#mensaje-loto-plus', `Sorteo Loto Plus #${concursoId} guardado exitosamente en la base de datos.`, false);
 
-        // Actualizar visualizaciones
-        displayLotoPlusData();
-        loadLotoPlusFrequencies();
+        // Recargar datos
+        await displayLotoPlusData();
+        await loadLotoPlusFrequencies();
 
     } catch (error) {
         console.error('Error submitting Loto Plus:', error);
@@ -422,7 +456,11 @@ function init() {
 
     const refreshBtn = qs('#refresh-data');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', loadAllData);
+        refreshBtn.addEventListener('click', () => {
+            loadAllData();
+            displayLotoPlusData();
+            loadLotoPlusFrequencies();
+        });
     }
 
     const exportBtn = qs('#export-sql');
@@ -437,14 +475,9 @@ function init() {
 
     // Cargar datos iniciales
     loadAllData();
+    displayLotoPlusData();
 
-    // Cargar datos de ejemplo de Loto Plus si están disponibles
-    if (typeof sorteosLotoPlusEjemplo !== 'undefined') {
-        lotoPlusSorteos = [...sorteosLotoPlusEjemplo];
-        displayLotoPlusData();
-    }
-
-    // Cargar estadísticas adicional después de un pequeño retraso
+    // Cargar estadísticas adicionales después de un pequeño retraso
     setTimeout(() => {
         loadQuiniFrequencies();
         loadLotoPlusFrequencies();

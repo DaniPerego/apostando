@@ -78,7 +78,16 @@ app.get('/sorteos', async (req, res) => {
 
         // Obtener números para cada sorteo
         for (const sorteo of sorteos) {
-            const [numeros] = await db.execute('SELECT numero FROM quini_numeros WHERE sorteo_id = ? AND tipo IN ("primer", "segunda", "revancha", "siempre") ORDER BY id', [sorteo.id]);
+            // Obtener todos los números incluyendo premio extra
+            const [numeros] = await db.execute('SELECT numero, tipo FROM quini_numeros WHERE sorteo_id = ? ORDER BY id', [sorteo.id]);
+            
+            // Separar por tipo
+            sorteo.primer = numeros.filter(n => n.tipo === 'primer').map(n => n.numero);
+            sorteo.segunda = numeros.filter(n => n.tipo === 'segunda').map(n => n.numero);
+            sorteo.revancha = numeros.filter(n => n.tipo === 'revancha').map(n => n.numero);
+            sorteo.siempre = numeros.filter(n => n.tipo === 'siempre').map(n => n.numero);
+            sorteo.premioExtra = numeros.filter(n => n.tipo === 'premio_extra').map(n => n.numero);
+            
             sorteo.numeros = numeros.map(n => n.numero);
             sorteo.concurso = sorteo.id;
         }
