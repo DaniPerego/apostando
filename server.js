@@ -20,7 +20,85 @@ const dbConfig = {
 // Conexión global
 let db;
 
+
 // ============= ENDPOINTS ESENCIALES =============
+
+// ENDPOINT: Predicción Quini
+app.get('/prediccion-quini', async (req, res) => {
+    try {
+        const [sorteos] = await db.execute(`
+            SELECT s.id, s.fecha FROM quini_sorteos s ORDER BY s.fecha ASC
+        `);
+        
+        if (sorteos.length < 10) {
+            return res.json({ 
+                error: 'Se necesitan al menos 10 sorteos para predicción',
+                candidatos: []
+            });
+        }
+        
+        const totalSorteos = sorteos.length;
+        const candidatos = [];
+        
+        for (let num = 0; num <= 45; num++) {
+            const [apariciones] = await db.execute(`
+                SELECT ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                FROM quini_sorteos s
+                INNER JOIN quini_numeros n ON s.id = n.sorteo_id
+                WHERE n.numero = ? AND n.tipo IN ('primer', 'segunda', 'revancha', 'siempre')
+                ORDER BY s.fecha ASC
+            `, [num]);
+            
+            if (apariciones.length === 0) continue;
+            
+            const intervalos = [];
+            for (let i = 1; i < apariciones.length; i++) {
+                intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+            }
+            
+            if (intervalos.length === 0) continue;
+            
+            const intervaloPromedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+            const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+            const sorteosSinSalir = totalSorteos - ultimaPosicion;
+            const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+            
+            // Calcular score predictivo (0-100)
+            let score = 0;
+            // Factor 1: Retraso (40 puntos máx) - Más retraso = más score
+            score += Math.min(40, ratioRetraso * 20);
+            // Factor 2: Frecuencia histórica (30 puntos máx) - Más apariciones = más score
+            const frecuenciaRelativa = apariciones.length / totalSorteos;
+            score += frecuenciaRelativa * 30;
+            // Factor 3: Regularidad (30 puntos máx) - Menos variación = más score
+            const varianza = intervalos.reduce((acc, val) => 
+                acc + Math.pow(val - intervaloPromedio, 2), 0) / intervalos.length;
+            const coeficienteVariacion = Math.sqrt(varianza) / intervaloPromedio;
+            score += Math.max(0, 30 - (coeficienteVariacion * 15));
+            candidatos.push({
+                numero: num,
+                scorePredictivo: Math.round(score * 100) / 100,
+                sorteosSinSalir,
+                intervaloPromedio: Math.round(intervaloPromedio * 100) / 100,
+                vecesAparecio: apariciones.length,
+                ratioRetraso: Math.round(ratioRetraso * 100) / 100
+            });
+        }
+        // Ordenar por score predictivo
+        candidatos.sort((a, b) => b.scorePredictivo - a.scorePredictivo);
+        // Top 15 candidatos
+        const topCandidatos = candidatos.slice(0, 15);
+        res.json({
+            candidatos: topCandidatos,
+            totalSorteos,
+            fechaPrediccion: new Date().toISOString(),
+            nota: 'Score predictivo combina retraso, frecuencia histórica y regularidad'
+        });
+    } catch (error) {
+        console.error('Error en predicción Quini:', error);
+        res.status(500).json({ error: 'Error generando predicción' });
+    }
+});
 
 // 1. GUARDAR SORTEO
 app.post('/sorteo', async (req, res) => {
@@ -109,53 +187,10 @@ app.get('/frecuencias', async (req, res) => {
             GROUP BY numero 
             ORDER BY frecuencia DESC, numero ASC
         `);
-
         res.json(result);
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Error calculando frecuencias' });
-    }
-});
-
-// 3.5 ACTUALIZAR SORTEO QUINI 6
-app.put('/sorteo/actualizar', async (req, res) => {
-    try {
-        const { concurso, fecha, primer, segunda, revancha, siempre, concursoOriginal, fechaOriginal } = req.body;
-
-        console.log('📝 Actualizar sorteo:', { concurso, fecha, concursoOriginal, fechaOriginal });
-
-        // Validación
-        if (!concurso || !fecha || !primer || !segunda || !revancha || !siempre) {
-            return res.status(400).json({ error: 'Datos incompletos' });
-        }
-
-        // Si el concurso o fecha cambiaron, eliminar el sorteo anterior
-        if (concursoOriginal && fechaOriginal && (concursoOriginal !== concurso || fechaOriginal !== fecha)) {
-            await db.execute('DELETE FROM quini_sorteos WHERE id = ?', [concursoOriginal]);
-        } else {
-            // Si no cambiaron, solo eliminar los números del sorteo actual
-            await db.execute('DELETE FROM quini_numeros WHERE sorteo_id = ?', [concurso]);
-        }
-
-        // Insertar/actualizar sorteo
-        await db.execute('INSERT INTO quini_sorteos (id, fecha) VALUES (?, ?) ON DUPLICATE KEY UPDATE fecha = ?', [concurso, fecha, fecha]);
-
-        // Insertar números
-        const premioExtra = [...primer, ...segunda, ...revancha].sort((a, b) => a - b);
-        const numeros = [];
-        primer.forEach(n => numeros.push([concurso, 'primer', n]));
-        segunda.forEach(n => numeros.push([concurso, 'segunda', n]));
-        revancha.forEach(n => numeros.push([concurso, 'revancha', n]));
-        siempre.forEach(n => numeros.push([concurso, 'siempre', n]));
-        premioExtra.forEach(n => numeros.push([concurso, 'premio_extra', n]));
-
-        const values = numeros.map(() => '(?, ?, ?)').join(', ');
-        await db.execute(`INSERT INTO quini_numeros (sorteo_id, tipo, numero) VALUES ${values}`, numeros.flat());
-
-        res.json({ success: true, concurso });
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Error actualizando sorteo', details: error.message });
     }
 });
 
@@ -175,18 +210,19 @@ app.post('/loto-plus', async (req, res) => {
         await db.execute('INSERT INTO loto_plus_sorteos (id, fecha) VALUES (?, ?) ON DUPLICATE KEY UPDATE fecha = ?', [concurso, fecha, fecha]);
 
         // Insertar números
-        const numeros = [];
-        tradicional.forEach(n => numeros.push([concurso, 'tradicional', n]));
-        match.forEach(n => numeros.push([concurso, 'match', n]));
-        desquite.forEach(n => numeros.push([concurso, 'desquite', n]));
-        saleOSale.forEach(n => numeros.push([concurso, 'sale_o_sale', n]));
-        numeros.push([concurso, 'jack', numeroJack]);
+
+        const numerosInsert = [];
+        tradicional.forEach(n => numerosInsert.push([concurso, 'tradicional', n]));
+        match.forEach(n => numerosInsert.push([concurso, 'match', n]));
+        desquite.forEach(n => numerosInsert.push([concurso, 'desquite', n]));
+        saleOSale.forEach(n => numerosInsert.push([concurso, 'sale_o_sale', n]));
+        numerosInsert.push([concurso, 'jack', numeroJack]);
 
         // Limpiar números existentes del sorteo
         await db.execute('DELETE FROM loto_plus_numeros WHERE sorteo_id = ?', [concurso]);
 
-        const values = numeros.map(() => '(?, ?, ?)').join(', ');
-        await db.execute(`INSERT INTO loto_plus_numeros (sorteo_id, tipo, numero) VALUES ${values}`, numeros.flat());
+        const values = numerosInsert.map(() => '(?, ?, ?)').join(', ');
+        await db.execute(`INSERT INTO loto_plus_numeros (sorteo_id, tipo, numero) VALUES ${values}`, numerosInsert.flat());
 
         res.json({ success: true, concurso });
 
@@ -220,15 +256,16 @@ app.put('/loto-plus/actualizar', async (req, res) => {
         await db.execute('INSERT INTO loto_plus_sorteos (id, fecha) VALUES (?, ?) ON DUPLICATE KEY UPDATE fecha = ?', [concurso, fecha, fecha]);
 
         // Insertar números
-        const numeros = [];
-        tradicional.forEach(n => numeros.push([concurso, 'tradicional', n]));
-        match.forEach(n => numeros.push([concurso, 'match', n]));
-        desquite.forEach(n => numeros.push([concurso, 'desquite', n]));
-        saleOSale.forEach(n => numeros.push([concurso, 'sale_o_sale', n]));
-        numeros.push([concurso, 'jack', numeroJack]);
 
-        const values = numeros.map(() => '(?, ?, ?)').join(', ');
-        await db.execute(`INSERT INTO loto_plus_numeros (sorteo_id, tipo, numero) VALUES ${values}`, numeros.flat());
+        const numerosInsert = [];
+        tradicional.forEach(n => numerosInsert.push([concurso, 'tradicional', n]));
+        match.forEach(n => numerosInsert.push([concurso, 'match', n]));
+        desquite.forEach(n => numerosInsert.push([concurso, 'desquite', n]));
+        saleOSale.forEach(n => numerosInsert.push([concurso, 'sale_o_sale', n]));
+        numerosInsert.push([concurso, 'jack', numeroJack]);
+
+        const values = numerosInsert.map(() => '(?, ?, ?)').join(', ');
+        await db.execute(`INSERT INTO loto_plus_numeros (sorteo_id, tipo, numero) VALUES ${values}`, numerosInsert.flat());
 
         res.json({ success: true, concurso });
     } catch (error) {
