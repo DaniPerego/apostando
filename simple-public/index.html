@@ -2942,47 +2942,67 @@
                     return;
                 }
                 
-                // Comparar con todos los sorteos
-                const resultados = [];
-                
-                sorteos.forEach(sorteo => {
+
+                // Comparar con todos los sorteos y mostrar todos, resaltando los que tuvieron aciertos
+                const resultados = sorteos.map(sorteo => {
                     const numerosSorteo = sorteo.numeros || [];
                     const premioExtra = sorteo.premioExtra || [];
                     const jackSorteo = sorteo.jack;
-                    
-                    // Contar aciertos en números
-                    const aciertosNumeros = numerosApuesta.filter(num => 
-                        numerosSorteo.includes(num)
-                    );
-                    
-                    // Verificar aciertos en Premio Extra (Quini 6)
-                    let aciertoPremioExtra = false;
-                    if (juego === 'quini' && premioExtra.length === 18) {
-                        // Verificar si los 6 números apostados están en los 18 del premio extra
-                        const aciertosEnPremioExtra = numerosApuesta.filter(num => 
-                            premioExtra.includes(num)
-                        );
-                        aciertoPremioExtra = (aciertosEnPremioExtra.length === 6 && numerosApuesta.length === 6);
-                    }
-                    
-                    // Verificar jack (solo para Loto Plus)
-                    const aciertoJack = (juego === 'loto' && jackApuesta !== null && jackApuesta === jackSorteo);
-                    
-                    if (aciertosNumeros.length > 0 || aciertoJack || aciertoPremioExtra) {
-                        resultados.push({
-                            sorteo: sorteo,
-                            aciertosNumeros: aciertosNumeros,
-                            cantidadAciertos: aciertosNumeros.length,
-                            aciertoJack: aciertoJack,
-                            aciertoPremioExtra: aciertoPremioExtra,
-                            numerosSorteo: numerosSorteo,
-                            premioExtra: premioExtra,
-                            jackSorteo: jackSorteo
+
+                    // Para Quini: buscar aciertos por modalidad y preparar detalle visual
+                    let detallePorModalidad = {};
+                    let totalAciertosPorModalidad = 0;
+                    if (juego === 'quini') {
+                        const nums = sorteo.numeros || [];
+                        const modalidades = [
+                            { key: 'primer', label: 'Primer', nums: sorteo.primerSorteo && sorteo.primerSorteo.length === 6 ? sorteo.primerSorteo : nums.slice(0, 6) },
+                            { key: 'segunda', label: 'Segunda', nums: sorteo.segundaDelQuini && sorteo.segundaDelQuini.length === 6 ? sorteo.segundaDelQuini : nums.slice(6, 12) },
+                            { key: 'revancha', label: 'Revancha', nums: sorteo.revancha && sorteo.revancha.length === 6 ? sorteo.revancha : nums.slice(12, 18) },
+                            { key: 'siempre', label: 'Siempre Sale', nums: sorteo.siempreSale && sorteo.siempreSale.length === 6 ? sorteo.siempreSale : nums.slice(18, 24) }
+                        ];
+                        modalidades.forEach(mod => {
+                            const detalle = mod.nums.map(num => ({
+                                valor: num,
+                                acierto: numerosApuesta.includes(num)
+                            }));
+                            const aciertos = detalle.filter(d => d.acierto).length;
+                            totalAciertosPorModalidad += aciertos;
+                            detallePorModalidad[mod.key] = { detalle, aciertos };
                         });
                     }
+
+                    // Contar aciertos en números (todos juntos, para Loto)
+                    const aciertosNumeros = numerosApuesta.filter(num => numerosSorteo.includes(num));
+
+                    // Premio Extra: detalle de aciertos
+                    let detallePremioExtra = [];
+                    let cantidadAciertosPremioExtra = 0;
+                    if (juego === 'quini' && premioExtra.length === 18) {
+                        detallePremioExtra = premioExtra.map(num => ({
+                            valor: num,
+                            acierto: numerosApuesta.includes(num)
+                        }));
+                        cantidadAciertosPremioExtra = detallePremioExtra.filter(d => d.acierto).length;
+                    }
+
+                    // Verificar jack (solo para Loto Plus)
+                    const aciertoJack = (juego === 'loto' && jackApuesta !== null && jackApuesta === jackSorteo);
+
+                    return {
+                        sorteo: sorteo,
+                        aciertosNumeros: aciertosNumeros,
+                        cantidadAciertos: juego === 'quini' ? totalAciertosPorModalidad : aciertosNumeros.length,
+                        aciertoJack: aciertoJack,
+                        detallePremioExtra: detallePremioExtra,
+                        cantidadAciertosPremioExtra: cantidadAciertosPremioExtra,
+                        numerosSorteo: numerosSorteo,
+                        premioExtra: premioExtra,
+                        jackSorteo: jackSorteo,
+                        tuvoAcierto: (juego === 'quini' ? totalAciertosPorModalidad > 0 : (aciertosNumeros.length > 0 || aciertoJack)),
+                        detallePorModalidad: detallePorModalidad
+                    };
                 });
-                
-                // Mostrar resultados
+
                 mostrarResultadosApuesta(juego, resultados, numerosApuesta, jackApuesta);
                 
             } catch (error) {
@@ -2999,46 +3019,22 @@
             // Limpiar clases de acierto anteriores
             limpiarClasesAcierto(juego);
             
-            if (resultados.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; color: var(--text-secondary);">
-                        <h4>😔 Sin aciertos</h4>
-                        <p>Tus números no coincidieron con ningún sorteo cargado.</p>
-                        <p><strong>Números apostados:</strong> ${numerosApuesta.join(', ')}${jackApuesta !== null ? ` | Jack: ${jackApuesta}` : ''}</p>
-                    </div>
-                `;
-                
-                // Mostrar la solapa y expandirla automáticamente
-                solapa.style.display = 'block';
-                const content = document.getElementById(`content-resultados-${juego}`);
-                const toggle = document.getElementById(`toggle-resultados-${juego}`);
-                
-                if (content.classList.contains('collapsed')) {
-                    content.classList.remove('collapsed');
-                    toggle.classList.add('expanded');
-                    toggle.innerHTML = toggle.innerHTML.replace('▼', '▲');
-                }
-                
-                // Scroll suave hacia los resultados
-                solapa.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                return;
-            }
-            
             // Resaltar números que tuvieron aciertos
-            resaltarAciertos(juego, resultados);
-            
-            // Calcular estadísticas
-            const premiosExtra = resultados.filter(r => r.aciertoPremioExtra).length;
-            const mejorResultado = Math.max(...resultados.map(r => r.cantidadAciertos + (r.aciertoJack ? 1 : 0)));
-            const totalAciertos = resultados.reduce((sum, r) => sum + r.cantidadAciertos, 0);
-            const sorteosConAciertos = resultados.length;
-            
+            resaltarAciertos(juego, resultados.filter(r => r.tuvoAcierto));
+
+            // Calcular estadísticas solo de los sorteos con aciertos
+            const resultadosConAciertos = resultados.filter(r => r.tuvoAcierto);
+            const premiosExtra = resultadosConAciertos.filter(r => r.cantidadAciertosPremioExtra && r.cantidadAciertosPremioExtra > 0).length;
+            const mejorResultado = resultadosConAciertos.length > 0 ? Math.max(...resultadosConAciertos.map(r => r.cantidadAciertos + (r.aciertoJack ? 1 : 0))) : 0;
+            const totalAciertos = resultadosConAciertos.reduce((sum, r) => sum + r.cantidadAciertos, 0);
+            const sorteosConAciertos = resultadosConAciertos.length;
+
             let html = `
                 <div style="text-align: center; margin-bottom: 1rem;">
-                    <h4 style="color: var(--accent-color);">🎉 ¡Encontramos aciertos!</h4>
-                    ${premiosExtra > 0 ? `<p style="color: #f5576c; font-weight: bold; font-size: 1.2rem;">🏆 ${premiosExtra} Premio${premiosExtra > 1 ? 's' : ''} Extra acertado${premiosExtra > 1 ? 's' : ''}!</p>` : ''}
+                    <h4 style="color: var(--accent-color);">🎉 Resultados de tu apuesta</h4>
+                    ${premiosExtra > 0 ? `<p style="color: #f5576c; font-weight: bold; font-size: 1.2rem;">🏆 ${premiosExtra} Premio${premiosExtra > 1 ? 's' : ''} Extra con aciertos!</p>` : ''}
                 </div>
-                
+
                 <div class="estadisticas-aciertos">
                     <div class="stat-card ${mejorResultado >= 4 ? 'mejor-resultado' : ''}">
                         <span class="stat-number">${mejorResultado}</span>
@@ -3059,73 +3055,74 @@
                     </div>
                     ` : ''}
                 </div>
-                
+
                 <div style="margin-top: 1rem;">
-                    <h5>📋 Detalle de aciertos:</h5>
+                    <h5>📋 Detalle de todos los sorteos:</h5>
                     <div style="max-height: 300px; overflow-y: auto;">
             `;
-            
-            // Ordenar por cantidad de aciertos (mayor a menor)
-            resultados.sort((a, b) => {
-                const totalA = a.cantidadAciertos + (a.aciertoJack ? 1 : 0);
-                const totalB = b.cantidadAciertos + (b.aciertoJack ? 1 : 0);
-                return totalB - totalA;
-            });
-            
+
+            // Mostrar todos los sorteos, resaltando los que tuvieron aciertos
             resultados.forEach(resultado => {
                 const fecha = new Date(resultado.sorteo.fecha).toLocaleDateString('es-AR');
                 const totalAciertosItem = resultado.cantidadAciertos + (resultado.aciertoJack ? 1 : 0);
-                
-                // Badge especial para Premio Extra
-                const badgePremioExtra = resultado.aciertoPremioExtra 
-                    ? '<span style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; margin-left: 0.5rem;">🏆 PREMIO EXTRA</span>'
-                    : '';
-                
                 html += `
-                    <div style="border: 1px solid ${resultado.aciertoPremioExtra ? '#f5576c' : 'var(--border-color)'}; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: ${resultado.aciertoPremioExtra ? 'linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%)' : 'var(--bg-tertiary)'};">
+                    <div style="border: 1px solid ${resultado.tuvoAcierto ? 'var(--accent-color)' : 'var(--border-color)'}; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem; background: ${resultado.tuvoAcierto ? 'rgba(0, 200, 83, 0.08)' : 'var(--bg-tertiary)'};">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
                             <strong>${fecha}</strong>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <span style="background: var(--accent-color); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem;">
+                                <span style="background: ${resultado.tuvoAcierto ? 'var(--accent-color)' : '#bbb'}; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.8rem;">
                                     ${totalAciertosItem} acierto${totalAciertosItem !== 1 ? 's' : ''}
                                 </span>
-                                ${badgePremioExtra}
+                                ${resultado.cantidadAciertosPremioExtra > 0 ? `<span style=\"background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; margin-left: 0.5rem;\">🏆 Premio Extra: ${resultado.cantidadAciertosPremioExtra} acierto${resultado.cantidadAciertosPremioExtra !== 1 ? 's' : ''}</span>` : ''}
                             </div>
                         </div>
                         <div style="font-family: monospace; margin-bottom: 0.5rem;">
                             <strong>Sorteo:</strong> ${resultado.numerosSorteo.join(', ')}${resultado.jackSorteo !== undefined ? ` | Jack: ${resultado.jackSorteo}` : ''}
                         </div>
-                        ${resultado.aciertoPremioExtra ? `
-                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight: bold; text-align: center;">
-                            🎊 ¡6 NÚMEROS EN PREMIO EXTRA! 🎊<br>
-                            <span style="font-size: 0.85rem;">Tus 6 números están en los 18 del Premio Extra</span>
+                        ${juego === 'quini' ? `
+                        <div style=\"font-size: 0.95em; margin-top: 0.5em;\">
+                            <strong>Detalle por modalidad:</strong>
+                            <ul style=\"margin: 0.3em 0 0 1.2em; padding: 0; list-style: none;\">
+                                ${['primer','segunda','revancha','siempre'].map(key => {
+                                    const mod = resultado.detallePorModalidad[key];
+                                    if (!mod) return '';
+                                    return `<li><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ` +
+                                        mod.detalle.map(d => `<span style=\"display:inline-block; min-width:28px; padding:2px 4px; margin:1px; border-radius:4px; border:1px solid #ccc; background:${d.acierto ? '#00c85333' : 'transparent'}; font-weight:${d.acierto ? 'bold' : 'normal'}; color:${d.acierto ? '#00c853' : '#222'};\">${d.valor}</span>`).join('') +
+                                        ` <span style=\"margin-left:0.5em; color:#00c853; font-weight:bold;\">(${mod.aciertos} acierto${mod.aciertos!==1?'s':''})</span></li>`;
+                                }).join('')}
+                            </ul>
                         </div>
-                        <div style="font-family: monospace; font-size: 0.85rem; margin-bottom: 0.5rem;">
-                            <strong>Premio Extra (18):</strong> ${resultado.premioExtra.join(', ')}
+                        ${resultado.detallePremioExtra && resultado.detallePremioExtra.length > 0 ? `
+                        <div style=\"background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight: bold; text-align: center;\">
+                            Premio Extra: ${resultado.cantidadAciertosPremioExtra} acierto${resultado.cantidadAciertosPremioExtra!==1?'s':''}
+                        </div>
+                        <div style=\"font-family: monospace; font-size: 0.85rem; margin-bottom: 0.5rem;\">
+                            <strong>Premio Extra (18):</strong> ` + resultado.detallePremioExtra.map(d => `<span style=\"display:inline-block; min-width:28px; padding:2px 4px; margin:1px; border-radius:4px; border:1px solid #f5576c; background:${d.acierto ? '#f5576c33' : 'transparent'}; font-weight:${d.acierto ? 'bold' : 'normal'}; color:${d.acierto ? '#f5576c' : '#222'};\">${d.valor}</span>`).join('') + `
                         </div>
                         ` : ''}
-                        <div style="color: var(--accent-color); font-weight: bold;">
-                            <strong>Aciertos:</strong> ${resultado.aciertosNumeros.join(', ')}${resultado.aciertoJack ? ` | Jack: ✓` : ''}
+                        ` : ''}
+                        <div style="color: ${resultado.tuvoAcierto ? 'var(--accent-color)' : '#888'}; font-weight: bold; margin-top:0.5em;">
+                            <strong>Aciertos totales en sorteo:</strong> ${resultado.cantidadAciertos}${resultado.aciertoJack ? ` | Jack: ✓` : ''}
                         </div>
                     </div>
                 `;
             });
-            
+
             html += '</div></div>';
-            
+
             container.innerHTML = html;
-            
+
             // Mostrar la solapa y expandirla automáticamente
             solapa.style.display = 'block';
             const content = document.getElementById(`content-resultados-${juego}`);
             const toggle = document.getElementById(`toggle-resultados-${juego}`);
-            
+
             if (content.classList.contains('collapsed')) {
                 content.classList.remove('collapsed');
                 toggle.classList.add('expanded');
                 toggle.innerHTML = toggle.innerHTML.replace('▼', '▲');
             }
-            
+
             // Scroll suave hacia los resultados
             solapa.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
