@@ -3101,6 +3101,34 @@
                         </div>
                         ` : ''}
                         ` : ''}
+                        ${juego === 'loto' ? `
+                        <div style=\"font-size: 0.95em; margin-top: 0.5em;\">
+                            <strong>Detalle por modalidad:</strong>
+                            <ul style=\"margin: 0.3em 0 0 1.2em; padding: 0; list-style: none;\">
+                                ${(() => {
+                                    const modalidadesLoto = [
+                                        { key: 'tradicional', label: 'Tradicional', offset: 0 },
+                                        { key: 'match', label: 'Match', offset: 6 },
+                                        { key: 'desquite', label: 'Desquite', offset: 12 },
+                                        { key: 'sale', label: 'Sale o Sale', offset: 18 }
+                                    ];
+                                    return modalidadesLoto.map(mod => {
+                                        const nums = resultado.numerosSorteo.slice(mod.offset, mod.offset + 6);
+                                        if (!nums || nums.length !== 6) return '';
+                                        const detalle = nums.map(num => ({ valor: num, acierto: numerosApuesta.includes(num) }));
+                                        const aciertos = detalle.filter(d => d.acierto).length;
+                                        return `<li><strong>${mod.label}:</strong> ` +
+                                            detalle.map(d => `<span style=\"display:inline-block; min-width:28px; padding:2px 4px; margin:1px; border-radius:4px; border:1px solid #ccc; background:${d.acierto ? '#00c85333' : 'transparent'}; font-weight:${d.acierto ? 'bold' : 'normal'}; color:${d.acierto ? '#00c853' : '#222'};\">${d.valor}</span>`).join('') +
+                                            ` <span style=\"margin-left:0.5em; color:#00c853; font-weight:bold;\">(${aciertos} acierto${aciertos!==1?'s':''})</span></li>`;
+                                    }).join('');
+                                })()}
+                                ${resultado.jackSorteo !== undefined ? (() => {
+                                    const aciertoJack = jackApuesta !== null && jackApuesta === resultado.jackSorteo;
+                                    return `<li><strong>Jack:</strong> <span style=\"display:inline-block; min-width:28px; padding:2px 4px; margin:1px; border-radius:4px; border:1px solid #ccc; background:${aciertoJack ? '#00c85333' : 'transparent'}; font-weight:${aciertoJack ? 'bold' : 'normal'}; color:${aciertoJack ? '#00c853' : '#222'};\">${resultado.jackSorteo}</span> <span style=\"margin-left:0.5em; color:#00c853; font-weight:bold;\">(${aciertoJack ? '✓' : '0 aciertos'})</span></li>`;
+                                })() : ''}
+                            </ul>
+                        </div>
+                        ` : ''}
                         <div style="color: ${resultado.tuvoAcierto ? 'var(--accent-color)' : '#888'}; font-weight: bold; margin-top:0.5em;">
                             <strong>Aciertos totales en sorteo:</strong> ${resultado.cantidadAciertos}${resultado.aciertoJack ? ` | Jack: ✓` : ''}
                         </div>

@@ -196,6 +196,116 @@ app.get('/frecuencias', async (req, res) => {
 
 // ============= LOTO PLUS ENDPOINTS =============
 
+// ENDPOINT: Predicción Loto Plus
+app.get('/prediccion-loto-plus', async (req, res) => {
+    try {
+        const [sorteos] = await db.execute(`
+            SELECT s.id, s.fecha FROM loto_plus_sorteos s ORDER BY s.fecha ASC
+        `);
+        if (sorteos.length < 10) {
+            return res.json({
+                error: 'Se necesitan al menos 10 sorteos para predicción',
+                candidatos: []
+            });
+        }
+        const totalSorteos = sorteos.length;
+        const candidatos = [];
+        // Números principales (0-45)
+        for (let num = 0; num <= 45; num++) {
+            const [apariciones] = await db.execute(`
+                SELECT ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                FROM loto_plus_sorteos s
+                INNER JOIN loto_plus_numeros n ON s.id = n.sorteo_id
+                WHERE n.numero = ? AND n.tipo IN ('tradicional', 'match', 'desquite', 'sale_o_sale')
+                ORDER BY s.fecha ASC
+            `, [num]);
+            if (apariciones.length === 0) continue;
+            const intervalos = [];
+            for (let i = 1; i < apariciones.length; i++) {
+                intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+            }
+            if (intervalos.length === 0) continue;
+            const intervaloPromedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+            const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+            const sorteosSinSalir = totalSorteos - ultimaPosicion;
+            const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+            // Calcular score predictivo (0-100)
+            let score = 0;
+            // Factor 1: Retraso (40 puntos máx)
+            score += Math.min(40, ratioRetraso * 20);
+            // Factor 2: Frecuencia histórica (30 puntos máx)
+            const frecuenciaRelativa = apariciones.length / totalSorteos;
+            score += frecuenciaRelativa * 30;
+            // Factor 3: Regularidad (30 puntos máx)
+            const varianza = intervalos.reduce((acc, val) => acc + Math.pow(val - intervaloPromedio, 2), 0) / intervalos.length;
+            const coeficienteVariacion = Math.sqrt(varianza) / intervaloPromedio;
+            score += Math.max(0, 30 - (coeficienteVariacion * 15));
+            candidatos.push({
+                numero: num,
+                scorePredictivo: Math.round(score * 100) / 100,
+                sorteosSinSalir,
+                intervaloPromedio: Math.round(intervaloPromedio * 100) / 100,
+                vecesAparecio: apariciones.length,
+                ratioRetraso: Math.round(ratioRetraso * 100) / 100
+            });
+        }
+        // Ordenar por score predictivo
+        candidatos.sort((a, b) => b.scorePredictivo - a.scorePredictivo);
+        // Top 15 candidatos
+        const topCandidatos = candidatos.slice(0, 15);
+
+        // Predicción para Jack (0-9)
+        const candidatosJack = [];
+        for (let num = 0; num <= 9; num++) {
+            const [apariciones] = await db.execute(`
+                SELECT ROW_NUMBER() OVER (ORDER BY s.fecha ASC) as posicion
+                FROM loto_plus_sorteos s
+                INNER JOIN loto_plus_numeros n ON s.id = n.sorteo_id
+                WHERE n.numero = ? AND n.tipo = 'jack'
+                ORDER BY s.fecha ASC
+            `, [num]);
+            if (apariciones.length === 0) continue;
+            const intervalos = [];
+            for (let i = 1; i < apariciones.length; i++) {
+                intervalos.push(apariciones[i].posicion - apariciones[i-1].posicion);
+            }
+            if (intervalos.length === 0) continue;
+            const intervaloPromedio = intervalos.reduce((a, b) => a + b, 0) / intervalos.length;
+            const ultimaPosicion = apariciones[apariciones.length - 1].posicion;
+            const sorteosSinSalir = totalSorteos - ultimaPosicion;
+            const ratioRetraso = sorteosSinSalir / intervaloPromedio;
+            let score = 0;
+            score += Math.min(40, ratioRetraso * 20);
+            const frecuenciaRelativa = apariciones.length / totalSorteos;
+            score += frecuenciaRelativa * 30;
+            const varianza = intervalos.reduce((acc, val) => acc + Math.pow(val - intervaloPromedio, 2), 0) / intervalos.length;
+            const coeficienteVariacion = Math.sqrt(varianza) / intervaloPromedio;
+            score += Math.max(0, 30 - (coeficienteVariacion * 15));
+            candidatosJack.push({
+                numero: num,
+                scorePredictivo: Math.round(score * 100) / 100,
+                sorteosSinSalir,
+                intervaloPromedio: Math.round(intervaloPromedio * 100) / 100,
+                vecesAparecio: apariciones.length,
+                ratioRetraso: Math.round(ratioRetraso * 100) / 100
+            });
+        }
+        candidatosJack.sort((a, b) => b.scorePredictivo - a.scorePredictivo);
+        const topCandidatosJack = candidatosJack.slice(0, 5);
+
+        res.json({
+            candidatos: topCandidatos,
+            candidatosJack: topCandidatosJack,
+            totalSorteos,
+            fechaPrediccion: new Date().toISOString(),
+            nota: 'Score predictivo combina retraso, frecuencia histórica y regularidad'
+        });
+    } catch (error) {
+        console.error('Error en predicción Loto Plus:', error);
+        res.status(500).json({ error: 'Error generando predicción Loto Plus' });
+    }
+});
+
 // 4. GUARDAR LOTO PLUS
 app.post('/loto-plus', async (req, res) => {
     try {
