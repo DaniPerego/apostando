@@ -1,10 +1,24 @@
-# Ignorar dependencias y carpetas generadas
+# Dependencias
 node_modules/
-client/
-dist/
-build/
-release/
-*.log
+
+# Entorno y credenciales
 .env
-*.backup
-*.tmp
+
+# Backups de base de datos
+backups/
+*.sql.bak
+
+# Builds y release
+dist/
+release/
+output/
+
+# Archivos de sistema
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Scripts locales de arranque
+Apostando.lnk
