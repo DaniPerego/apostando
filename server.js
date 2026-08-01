@@ -1352,8 +1352,10 @@ app.post('/sorteo', async (req, res) => {
         // Premio Extra automático: unión sin repetidos de Primera + Segunda + Revancha
         const premioExtra = buildPremioExtra(primer, segunda, revancha);
 
-        // Insertar sorteo
-        await db.execute('INSERT INTO quini_sorteos (id, fecha) VALUES (?, ?)', [concurso, fecha]);
+        // Insertar sorteo (si el concurso ya existe, se actualiza en vez de fallar por PK duplicada)
+        await db.execute('INSERT INTO quini_sorteos (id, fecha) VALUES (?, ?) ON DUPLICATE KEY UPDATE fecha = ?', [concurso, fecha, fecha]);
+        // Limpiar números previos del concurso para evitar duplicados en quini_numeros (PK compuesta)
+        await db.execute('DELETE FROM quini_numeros WHERE sorteo_id = ?', [concurso]);
 
         // Insertar números (batch simple)
         const numeros = [];
